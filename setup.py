@@ -1,14 +1,14 @@
-# This file is part of the Pattern and Anomaly Detection Library (openclean-pattern).
+# This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
 # Copyright (C) 2020 New York University.
 #
-# openclean-pattern is released under the Revised BSD License. See file LICENSE for
+# openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
 """Required packages for install, test, docs, and tests."""
 
 
-import io, os, re
+import os, re
 from setuptools import setup, find_packages
 
 # todo: add
@@ -38,7 +38,7 @@ extras_require = {
 
 
 # Get the version string from the version.py file in the openclean-patternpackage.
-with open(os.path.join('openclean-pattern', 'version.py'), 'rt') as f:
+with open(os.path.join('openclean_pattern', 'version.py'), 'rt') as f:
     filecontent = f.read()
 match = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", filecontent, re.M)
 if match is not None:
@@ -54,12 +54,12 @@ with open('README.rst', 'rt') as f:
 
 # todo: update urls
 setup(
-    name='openclean-pattern',
+    name='openclean_pattern',
     version=version,
     description="Library for pattern and anomalous pattern detection",
     long_description=description,
     long_description_content_type='text/x-rst',
-    keywords=['openclean-pattern','pattern detection'],
+    keywords=['openclean_pattern','pattern detection'],
     url='https://github.com/VIDA-NYU/openclean-pattern',
     author='Munaf Qazi',
     author_email='munaf.qazi@gmail.com',
