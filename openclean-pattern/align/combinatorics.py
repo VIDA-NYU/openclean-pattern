@@ -190,6 +190,6 @@ class CombAligner(Aligner):
                         pattern_array[i, j] = pattern_array[j, i] = alignment
                     except Exception as exc2:
                         pass
-                        # print(exc2, row[3]) # errors for where combinations too many, alignment not parsed to RegexToken and file header
+                        # print(exc2, row[3]) # errors for where combinations too many, alignment not parsed to RegexToken and file header.txt
 
         return self._cluster(rows, distance_array, pattern_array)
