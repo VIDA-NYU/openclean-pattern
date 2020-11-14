@@ -34,7 +34,7 @@ class DataTypeResolver(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_data(self):
+    def get_vocabulary(self):
         """gets the data in used to build the resolver
 
         Returns
@@ -42,7 +42,6 @@ class DataTypeResolver(metaclass=ABCMeta):
             list
         """
         raise NotImplementedError()
-
 
 
 class DefaultTypeResolver(DataTypeResolver):
@@ -87,9 +86,9 @@ class DefaultTypeResolver(DataTypeResolver):
                     if adr:
                         return adr
                     else:
-                        return False
+                        return token
 
-    def get_data(self):
+    def get_vocabulary(self):
         """gets the data in used to build the resolver
 
         Returns
@@ -125,7 +124,7 @@ class DateTimeResolver(DataTypeResolver):
             return SupportedDataTypes.MONTH
         return False
 
-    def get_data(self):
+    def get_vocabulary(self):
         x = list()
         [x.append(l.lower()) for l in self.weekdays + self.months]
         return x
@@ -162,7 +161,7 @@ class GeoSpatialResolver(DataTypeResolver, datamart_geo.GeoData):
         # returns prefix tree
         return self.areas
 
-    def get_data(self):
+    def get_vocabulary(self):
         areas = list()
         self.gs.load_areas([0, 1, 2])  # already lowercased
         [areas.append(area) for area in self.gs._area_names]
@@ -191,7 +190,7 @@ class BusinessEntityResolver(DataTypeResolver):
             return SupportedDataTypes.BE
         return False
 
-    def get_data(self):
+    def get_vocabulary(self):
         x = list()
         [x.append(l.lower()) for l in self.be]
         return x
@@ -227,7 +226,7 @@ class AddressDesignatorResolver(DataTypeResolver):
             return SupportedDataTypes.SUD
         return False
 
-    def get_data(self):
+    def get_vocabulary(self):
         x = list()
         [x.append(l.lower()) for l in list(self.street) + list(self.sud)]
         return x

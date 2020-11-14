@@ -88,21 +88,40 @@ def has_numbers(inputString):
 ### Samplers
 
 class Sampler(metaclass=ABCMeta):
-    """Class to sample an input series. This was necessary because pandas.sample sampling can be slow"""
+    """Class to sample an input iterable. This was necessary because pandas.sample sampling can be slow."""
 
     def __init__(self, iterable, n=1):
+        """initizlizes the Sampler class
+
+        Parameters
+        ----------
+        iterable: Iterable
+            the iterable class object which has data to be sampled
+        n: float
+            the proportion or number of records to sample
+        """
         self.iterable = iterable
         self.n = n
         self.frac = 0 <= n <= 1
 
     @abstractmethod
-    def sample(self):
+    def __call__(self, *args, **kwargs):
+        """Method to sample the input iterable sequence
+        """
         raise NotImplementedError()
+
+    def sample(self):
+        """a convenience sample method
+        """
+        return self.__call__()
 
 
 class WeightedRandomSampler(Sampler):
-    """Implements weighted random sampling using the provided collections.Counter object.
+    """Implements weighted random sampling using the distribution provided collections.Counter object.
     Based on the work: https://eli.thegreenplace.net/2010/01/22/weighted-random-generation-in-python/
+
+    Note: if a Counter or dict of type {value:frequency} is passed in, there is no rowidx information tied to
+    the sampled series and this can possibly require an extra lookup during anomaly detection
         """
 
     def __init__(self, weights, n=1, random_state=None):
@@ -117,7 +136,7 @@ class WeightedRandomSampler(Sampler):
         random_state: int (default: None)
             the seed value for the pseudo random number generator
         """
-        super().__init__(weights, n)
+        super(WeightedRandomSampler, self).__init__(weights, n)
         self.random_state = random_state
         self.totals = []  # cumulative sum
         running_total = 0
@@ -142,18 +161,63 @@ class WeightedRandomSampler(Sampler):
 
         Returns
         -------
-            collections.Counter
+            sampled list of rows
         """
-
         sample = Counter()
         n = self.totals[-1] * self.n if self.frac else self.n
         keys = list(self.iterable.keys())
         for _c in range(n):
             sample[keys[self.next()]] += 1
-        return sample
+        return WeightedRandomSampler.counter_to_list(sample)
 
-    def sample(self):
-        """implements the super class' abstract method
+    @staticmethod
+    def counter_to_list(counter):
+        """ method to create a series list from a counter object
+
+        Parameters
+        ----------
+        counter: collections.Counter
+            the counter object to convert to a list
+
+        Returns
+        -------
+            list of values
         """
-        return self.__call__()
+        series = list()
+        for k, v in counter.items():
+            for _ in range(v):
+                series.append(k)
+        return series
 
+
+class RandomSampler(Sampler):
+    """Class to randomly sample an input iterable. This was necessary because pandas.sample samples a dataframe
+    which can be slow.
+
+    Note: if a Counter or dict of type {value:frequency} is passed in, there is no rowidx information tied to
+    the sampled series and this can possibly require an extra lookup during anomaly detection
+    """
+    def __init__(self, iterable, n=1, random_state=None):
+        """initizlizes the Random Sampler class
+
+        Parameters
+        ----------
+        iterable: Iterable
+            the iterable class object which has data to be sampled
+        n: float
+            the proportion or number of records to sample
+        random_state: int (default: None)
+            the seed value for the pseudo random number generator
+                    """
+        super(RandomSampler, self).__init__(iterable, n)
+        self.random_state = random_state
+
+    def __call__(self, *args, **kwargs):
+        """Method to sample the input iterable sequence
+
+         Returns
+        -------
+            sampled list of rows
+        """
+        n = len(self.iterable) * self.n if self.frac else self.n
+        return random.Random(self.random_state).sample(self.iterable, n)

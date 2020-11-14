@@ -1,9 +1,12 @@
-from openclean import datatypes
-from openclean.tokenize import Tokenizer, TOKENIZER_SMART
-from openclean.tokenize.regex import RegexTokenizer
-from openclean.regex.compiler import RegexCompiler
+from openclean_pattern import datatypes
+from openclean_pattern.tokenize.base import Tokenizer
+from openclean_pattern.tokenize.regex import RegexTokenizer
+from openclean_pattern.regex.compiler import RegexCompiler
 
 import re
+
+TOKENIZER_SMART = 'smart'
+
 
 class SmartTokenizer(Tokenizer):
     def __init__(self):
@@ -38,21 +41,13 @@ class SmartTokenizer(Tokenizer):
             val = re.sub(r'\b'+p+r'\b', dtype.get_label(p), val)
         return val
 
-    def tokenize(self, column):
-        '''
-        split each row value
-        :param column: pd.Series to tokenize
-        :return: split pd.Series with domain classes injected
-        '''
-        return RegexTokenizer().tokenize(column)
-
-    def tokenize_row(self, x):
+    def tokenize_value(self, x):
         '''
         split a string
         :param x: string
         :return: list of tokens
         '''
-        return RegexTokenizer().tokenize_row(x)
+        return RegexTokenizer().tokenize_value(x)
 
     def encode(self, column, freq):
         '''

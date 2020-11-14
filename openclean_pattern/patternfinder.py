@@ -10,7 +10,8 @@
 from openclean_pattern.config import NEW_HYPHEN_SYMBOL, GAP_SYMBOL
 
 from openclean_pattern.tokenize.factory import TokenizerFactory
-from openclean_pattern.tokenize import TOKENIZER_REGEX
+from openclean_pattern.tokenize.regex import TOKENIZER_REGEX
+from openclean_pattern.tokenize.base import Tokenizer
 
 from openclean_pattern.align.factory import AlignerFactory
 from openclean_pattern.align import ALIGNER_COMB
@@ -34,7 +35,7 @@ class PatternFinder(object):
     '''
     def __init__(self, series: Union[Dict, List],
                  frac: float = 1,
-                 tokenizer: str = TOKENIZER_REGEX,
+                 tokenizer: Union[str, Tokenizer] = TOKENIZER_REGEX,
                  aligner: Union[str, None] = ALIGNER_COMB,
                  distance: str = DISTANCE_TDE) -> None:
         '''
@@ -46,7 +47,7 @@ class PatternFinder(object):
             list of column values or dict of column values:frequency
         frac: float
             sample size
-        tokenizer: str
+        tokenizer: str or object of class Tokenizer
             the tokenizer to use
         aligner: str
             the aligner to use
@@ -54,7 +55,7 @@ class PatternFinder(object):
             distance to use for clustering
         '''
         self.series = self._sample(series, frac)
-        self._tokenizer = TokenizerFactory(tokenizer).get_tokenizer()
+        self._tokenizer = tokenizer if isinstance(tokenizer, Tokenizer) else TokenizerFactory.create_tokenizer(tokenizer)
         self._distance = distance
         self._aligner = AlignerFactory(aligner, distance).get_aligner() # default is naive-all-combinations-aligner
         self._distance_array = None
@@ -62,7 +63,6 @@ class PatternFinder(object):
         self.clusters = None
         self.regex = None
         self.outliers = dict()
-
 
     def _sample(self, series, frac):
         '''
@@ -77,13 +77,13 @@ class PatternFinder(object):
 
         Returns
         -------
-            pandas DataFrame
+            list of samples selected from the input sequence
         '''
         # for now, remove apostrophes
         if isinstance(series, dict):
-            series = Counter({str.replace(str.lower(s),'\'',''):i for s,i in series.items()})
+            series = Counter({str.replace(str.lower(str(s)),'\'',''): i for s, i in series.items()})
         elif isinstance(series, list):
-            series = Counter([str.replace(str.upper(s),'\'','') for s in series])
+            series = Counter([str.replace(str.lower(str(s)),'\'','') for s in series])
         else:
             raise ValueError("Input column not valid")
 
@@ -257,3 +257,12 @@ class PatternFinder(object):
             matched = Evaluator.evaluate_tokens(np_aligned_rows, freq, eval_patterns)
 
         return matched
+
+    def find2(self):
+        """ identifies patterns present in the provided columns and returns a list of tuples in the form (pattern, proportions)
+        """
+        # todo: sequence: sample -> encode/resolve -> tokenize -> align w disttance -> evaluator. serializer?
+        data = self.series
+        tokenizer = self._tokenizer
+
+
