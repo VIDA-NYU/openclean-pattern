@@ -7,9 +7,7 @@
 
 """Factory methods to instantiate a tokenizer class """
 
-from openclean_pattern.tokenize.regex import RegexTokenizer, TOKENIZER_REGEX
-from openclean_pattern.tokenize.smart import SmartTokenizer, TOKENIZER_SMART
-from openclean_pattern.tokenize.base import DefaultTokenizer, TOKENIZER_DEFAULT
+from openclean_pattern.tokenize.regex import RegexTokenizer, TOKENIZER_REGEX, DefaultTokenizer, TOKENIZER_DEFAULT
 
 
 class TokenizerFactory(object):
@@ -29,9 +27,7 @@ class TokenizerFactory(object):
         """
         if tokenizer == TOKENIZER_REGEX:
             return RegexTokenizer(type_resolver=type_resolver)
-        elif tokenizer == TOKENIZER_SMART:
-            return SmartTokenizer(type_resolver=type_resolver)
         elif tokenizer == TOKENIZER_DEFAULT:
-            return DefaultTokenizer(type_resolver=type_resolver)
+            return DefaultTokenizer()
 
         raise ValueError('tokenizer: {} not found'.format(tokenizer))

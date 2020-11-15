@@ -16,6 +16,7 @@ from collections import Counter
 
 ### Comparators
 
+
 class Comparator(metaclass=ABCMeta):
     """Compares different dataitems
     """
@@ -153,7 +154,7 @@ class WeightedRandomSampler(Sampler):
         -------
             int
         """
-        rnd = random.Random(self.random_state).random() * self.totals[-1]
+        rnd = random.random() * self.totals[-1]
         return bisect.bisect_right(self.totals, rnd)
 
     def __call__(self):
@@ -164,8 +165,9 @@ class WeightedRandomSampler(Sampler):
             sampled list of rows
         """
         sample = Counter()
-        n = self.totals[-1] * self.n if self.frac else self.n
+        n = int(self.totals[-1] * self.n) if self.frac else int(self.n)
         keys = list(self.iterable.keys())
+        random.seed(self.random_state)
         for _c in range(n):
             sample[keys[self.next()]] += 1
         return WeightedRandomSampler.counter_to_list(sample)
@@ -219,5 +221,6 @@ class RandomSampler(Sampler):
         -------
             sampled list of rows
         """
-        n = len(self.iterable) * self.n if self.frac else self.n
-        return random.Random(self.random_state).sample(self.iterable, n)
+        random.seed(self.random_state)
+        n = int(len(self.iterable) * self.n) if self.frac else int(self.n)
+        return random.sample(self.iterable, n)

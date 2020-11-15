@@ -5,7 +5,6 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-from openclean_pattern.datatypes.base import SupportedDataTypes
 
 class Token:
     '''
@@ -32,20 +31,3 @@ class Token:
 
     def to_tuple(self):
         return tuple([self.value, self.regex_type, self.size])
-
-
-    # @staticmethod
-    # def from_value(value):
-    #         # if token == GAP_SYMBOL:
-    #         #     type = GAP
-    #         if token in supported_type_rep.keys():
-    #             type = supported_type_rep[token]
-    #         elif token.isdigit():
-    #             type = DIGIT
-    #         elif token.isalpha():
-    #             type = ALPHA
-    #         elif token.isalnum():
-    #             type = ALPHANUM
-    #         else:
-    #             type = PUNCTUATION
-    #     return Token(regex_type=type, token=token, size=len(token))
