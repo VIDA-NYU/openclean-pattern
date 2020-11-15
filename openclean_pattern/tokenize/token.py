@@ -17,7 +17,7 @@ class Token:
         self.value = value
 
     def __repr__(self):
-        return f'_{self.regex_type!r}_({self.size!r},{self.value!r})'
+        return f'_{self.regex_type.value!r}_({self.size!r},{self.value!r})'
 
     def __hash__(self):
         return hash(str(self))

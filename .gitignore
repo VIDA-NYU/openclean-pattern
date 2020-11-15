@@ -103,5 +103,4 @@ ENV/
 .mypy_cache/
 
 # Local dev config
-
-resources/config/localdev
+.idea/

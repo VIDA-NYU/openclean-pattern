@@ -8,7 +8,7 @@
 """A collection of useful utility methods"""
 
 import re
-from openclean_pattern.datatypes.resolver import DateTimeResolver
+from openclean_pattern.datatypes.resolver import DateResolver
 from abc import ABCMeta, abstractmethod
 import random
 import bisect
@@ -44,7 +44,7 @@ class Comparator(metaclass=ABCMeta):
 class DateComparator(Comparator):
 
     def __init__(self):
-        self.dt = DateTimeResolver()
+        self.dt = DateResolver()
 
     def compare(self, a, b):
         if self.dt.is_datetime(a) != False:

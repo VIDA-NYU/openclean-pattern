@@ -15,14 +15,14 @@ class SupportedDataTypes(enum.Enum):
     Enum class for all supported datatypes and their representations
     """
     # ATOMIC TYPES
-    STRING = STRING_REP = '\W+'
+    STRING = STRING_REP = '\W+' #TODO: REQUIRED?
     ALPHA = ALPHA_REP = 'ALPHA'
     ALPHANUM = ALPHANUM_REP = 'ALPHANUM'
     DIGIT = DIGIT_REP = 'NUMERIC'
     PUNCTUATION = PUNCTUATION_REP = 'PUNC'
-    GAP = 'G'
+    GAP = 'G' # ALIGNMENT GAP CHARACTER TODO: REQUIRED?
     SPACE_REP = '\S'
-    OPTIONAL_REP = '?'
+    OPTIONAL_REP = '?' # POST REGEX OPTIONAL CHARACTER TODO: REQUIRED?
 
     # SUPPORTED COMPOUND TYPES
     MONTH = 'MONTH'

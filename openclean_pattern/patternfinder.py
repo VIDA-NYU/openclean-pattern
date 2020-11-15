@@ -261,7 +261,7 @@ class PatternFinder(object):
     def find2(self):
         """ identifies patterns present in the provided columns and returns a list of tuples in the form (pattern, proportions)
         """
-        # todo: sequence: sample -> encode/resolve -> tokenize -> align w disttance -> evaluator. serializer?
+        # todo: sequence: sample -> encode/resolve_row -> tokenize -> align w disttance -> evaluator. serializer?
         data = self.series
         tokenizer = self._tokenizer
 

@@ -6,7 +6,7 @@
 # full license details.
 
 """Prefix searchable prefix tree implementation using pygtrie"""
-import pygtrie, re
+import pygtrie, string
 
 
 class PrefixTree(object):
@@ -22,16 +22,15 @@ class PrefixTree(object):
         """
         self.trie = self.build_trie(domain_words=words)
 
-    def prefix_search(self, content, abbreviations=False):
+    def prefix_search(self, content_words, ignore_punc=True):
         """ identifies prefixes from the vocabulary present in the content string.
 
         Parameters
         ----------
-        content: str
+        content_words: list
             the string to perform the search on
-        abbreviations: bool (default: False)
-            by default, the content string is tokenized on all punctuation. If True, dots
-            will not be included as a tokenizing delimiter as they represent abbreviations
+        ignore_punc: bool (default: True)
+            searches through the content words ignoring any punctuations in between
 
         Returns
         -------
@@ -39,21 +38,20 @@ class PrefixTree(object):
         """
         trie = self.trie
 
-        # todo: account for <apostrophe 's> similarly
-        # split on everything except dots if abbreviations = True
-        regex = r'[\w.]+' if abbreviations else r'[\w]+'
-        content_words = re.findall(regex, content)
-        content_words = [item for sublist in [j.split('_') for j in content_words] for item in
-                         sublist]  # handle _ separately
-
         phrases = set()
         discovered_prefixes = set()
         old_prefix = list()
-        for possible_prefix in content_words:
+        punc = list(string.punctuation) + [' ']
+
+        for i, possible_prefix in enumerate(content_words):
+
+            if ignore_punc:
+                if possible_prefix in punc and i < len(content_words)-1:
+                    continue
+
             # has_node returns 1(HAS_VALUE) if the exact key is found, 2(HAS_SUBTRIE) if the key is a sub trie,
             # 3 if it's both 0 if it's none
             # https://pygtrie.readthedocs.io/en/latest/#pygtrie.Trie.has_node
-
             prefix_in_trie = trie.has_node(possible_prefix)
             if prefix_in_trie & pygtrie.Trie.HAS_VALUE:
                 prefix = trie.get(possible_prefix)
