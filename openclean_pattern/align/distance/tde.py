@@ -1,5 +1,5 @@
-from openclean import GAP_SYMBOL
-from openclean.align.distance import Distance, DISTANCE_TDE
+from openclean_pattern.datatypes.base import SupportedDataTypes
+from openclean_pattern.align.distance import Distance, DISTANCE_TDE
 
 from string import punctuation
 import numpy as np
@@ -13,7 +13,7 @@ class TdeDistance(Distance):
         punc = punctuation+' '
         distance = 0
         for i in range(len(u)):
-            if u[i] == GAP_SYMBOL or v[i] == GAP_SYMBOL:
+            if u[i] == SupportedDataTypes.GAP or v[i] == SupportedDataTypes.GAP:
                 distance += 1
             elif (u[i] in punc and v[i] in punc) and u[i] == v[i]:
                 distance += 0

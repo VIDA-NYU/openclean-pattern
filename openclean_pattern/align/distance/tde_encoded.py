@@ -1,6 +1,6 @@
-from openclean.regex import *
-from openclean import GAP_SYMBOL
-from openclean.align.distance import Distance, DISTANCE_ETDE
+from openclean_pattern.regex import *
+from openclean_pattern.datatypes.base import SupportedDataTypes #GAP_SYMBOL
+from openclean_pattern.align.distance import Distance, DISTANCE_ETDE
 
 import re
 from string import punctuation

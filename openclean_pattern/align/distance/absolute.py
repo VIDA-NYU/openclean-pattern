@@ -1,4 +1,4 @@
-from openclean.align.distance import Distance, DISTANCE_ABSOLUTE
+from openclean_pattern.align.distance import Distance, DISTANCE_ABSOLUTE
 
 class AbsoluteDistance(Distance):
     def __init__(self):

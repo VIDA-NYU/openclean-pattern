@@ -54,8 +54,15 @@ The library comes with many predefined classes to support the pattern detection 
         - BusinessEntityResolver
         - AddressDesignatorResolver
         - GeoSpatialResolver
-4. Compile a pattern.
+    - DefaultTypeResolver: does both Atomic and Compound type resolution by letting a user add compound interceptors before the atomic type resolution operation.
+4.  Alignment or grouping: group rows with similar lengths or perform a multiple seqeunce alignment by looking at possible token order combinations to align all rows:
+        - GroupAlign
+        - CombAlign* : looks at all the possible combinations of each token in each row with other all other rows, calculates the distance, clusters the closest alignments together using DBSCAN and returns the clustered groups.
+5. Compile a pattern.
+    -
 
+
+* Not recommended for large datasets or cases where the number of combinations between rows is too large (e.g. one row has 16 tokens and other has 6, the total no. of distance computation just for this combination would be 16P6 =  5765760)
 
 Upcoming Modules
 ================
@@ -63,6 +70,7 @@ Upcoming Modules
 - ability to evaluate a regex on other columns
 - serializer / deserializer
 - anomalous pattern detection
+- multiple sequence alignment
 
 
 Examples

@@ -1,7 +1,7 @@
-from openclean.align.distance.absolute import AbsoluteDistance
-from openclean.align.distance.tde import TdeDistance
-from openclean.align.distance.tde_encoded import EtdeDistance
-from openclean.align.distance import DISTANCE_TDE, DISTANCE_ETDE, DISTANCE_ABSOLUTE, DISTANCES
+from openclean_pattern.align.distance.absolute import AbsoluteDistance
+from openclean_pattern.align.distance.tde import TdeDistance
+from openclean_pattern.align.distance.tde_encoded import EtdeDistance
+from openclean_pattern.align.distance import DISTANCE_TDE, DISTANCE_ETDE, DISTANCE_ABSOLUTE, DISTANCES
 
 class DistanceFactory(object):
     '''

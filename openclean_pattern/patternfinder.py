@@ -7,38 +7,35 @@
 
 """Pattern Finder class to identify regex patterns, find anomalies and evaluate patterns on new columns"""
 
-from openclean_pattern.config import NEW_HYPHEN_SYMBOL, GAP_SYMBOL
-
 from openclean_pattern.tokenize.factory import TokenizerFactory
-from openclean_pattern.tokenize.regex import TOKENIZER_REGEX
+from openclean_pattern.tokenize.regex import TOKENIZER_DEFAULT
 from openclean_pattern.tokenize.base import Tokenizer
 
 from openclean_pattern.align.factory import AlignerFactory
-from openclean_pattern.align import ALIGNER_COMB
-from openclean_pattern.align.distance import DISTANCE_TDE, DISTANCE_ETDE
+from openclean_pattern.align.group import ALIGN_GROUP
+from openclean_pattern.align.base import Aligner
 
-from openclean_pattern.regex.compiler import RegexCompiler
-from openclean_pattern.evaluate import Evaluator
+# from openclean_pattern.regex.compiler import RegexCompiler
+# from openclean_pattern.evaluate import Evaluator
 
 from openclean_pattern.utils.utils import WeightedRandomSampler
 
-import numpy as np, pandas as pd, re, os, operator, warnings
+import numpy as np, pandas as pd, operator, warnings
 
 from typing import Union, List, Dict
 from collections import Counter
 
-os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 class PatternFinder(object):
-    '''
+    """
     PatternFinder class to identify patterns and anomalies
-    '''
-    def __init__(self, series: Union[Dict, List],
+    """
+    def __init__(self,
+                 series: Union[Dict, List],
                  frac: float = 1,
-                 tokenizer: Union[str, Tokenizer] = TOKENIZER_REGEX,
-                 aligner: Union[str, None] = ALIGNER_COMB,
-                 distance: str = DISTANCE_TDE) -> None:
-        '''
+                 tokenizer: Union[str, Tokenizer] = TOKENIZER_DEFAULT,
+                 aligner: Union[str, Aligner] = ALIGN_GROUP) -> None:
+        """
         Initialize the pattern finder class. This assumes that the input columns have been sampled if too large
 
         Parameters
@@ -47,20 +44,17 @@ class PatternFinder(object):
             list of column values or dict of column values:frequency
         frac: float
             sample size
-        tokenizer: str or object of class Tokenizer
+        tokenizer: str or object of class Tokenizer (default: 'default')
             the tokenizer to use
-        aligner: str
+        aligner: str (default: 'group')
             the aligner to use
-        distance: str
-            distance to use for clustering
-        '''
+        """
         self.series = self._sample(series, frac)
         self._tokenizer = tokenizer if isinstance(tokenizer, Tokenizer) else TokenizerFactory.create_tokenizer(tokenizer)
-        self._distance = distance
-        self._aligner = AlignerFactory(aligner, distance).get_aligner() # default is naive-all-combinations-aligner
-        self._distance_array = None
+        self._aligner = aligner if isinstance(aligner, Aligner) else AlignerFactory.create_aligner(aligner)
+        # self._distance_array = None
         self._aligned = None
-        self.clusters = None
+        # self.clusters = None
         self.regex = None
         self.outliers = dict()
 
@@ -80,6 +74,8 @@ class PatternFinder(object):
             list of samples selected from the input sequence
         '''
         # for now, remove apostrophes
+        if isinstance(series, pd.Series):
+            series = series.to_list()
         if isinstance(series, dict):
             series = Counter({str.replace(str.lower(str(s)),'\'',''): i for s, i in series.items()})
         elif isinstance(series, list):
@@ -261,8 +257,12 @@ class PatternFinder(object):
     def find2(self):
         """ identifies patterns present in the provided columns and returns a list of tuples in the form (pattern, proportions)
         """
-        # todo: sequence: sample -> encode/resolve_row -> tokenize -> align w disttance -> evaluator. serializer?
-        data = self.series
+        # todo: sequence: sample -> encode/resolve_row -> tokenize -> align w distance -> evaluator. serializer?
+        column = self.series
         tokenizer = self._tokenizer
+        aligner = self._aligner
 
+        tokenized = tokenizer.encode(column) # encode is a two step method. it does both, the tokenization and the type resolution in the same go
+        aligned = aligner.align(tokenized)
 
+        print(aligned)
