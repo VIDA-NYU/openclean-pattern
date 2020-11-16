@@ -7,8 +7,6 @@
 
 """ Important to replace hyphen/dash because - is the gap character for multiple sequence alignment
 """
-# NEW_HYPHEN_SYMBOL = '^'
-# GAP_SYMBOL = '^'
 
 # sequence alignment gap symbol
 MSA_GAP_SYMBOL = '&zwnj;' # zero width non joiner special space character (&#8204;)

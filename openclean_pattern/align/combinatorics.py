@@ -58,8 +58,9 @@ class CombAligner(Aligner):
 
         Returns
         -------
-            a dict of lists with key 'n' representing the length and each inner list representing groups with n tokens
-        """
+               a dict of lists with key 'n' representing the length and each inner list representing row_indices of groups
+             with n tokens / row_index of part of the cluster
+     """
         raise NotImplementedError()
 
 # class CombAligner(Aligner):

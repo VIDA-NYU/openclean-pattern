@@ -36,11 +36,13 @@ class Tokenizer(object, metaclass=ABCMeta):
         self.case = case
 
     @abstractmethod
-    def _tokenize_value(self, value):
+    def _tokenize_value(self, rowidx, value):
         """tokenizes individual values
 
         Parameters
         ----------
+        rowidx: int
+            row id
         value: str
             the value to tokenize
 
@@ -51,12 +53,14 @@ class Tokenizer(object, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def _encode_value(self, value):
+    def _encode_value(self, rowidx, value):
         """ tokenizes a single row value and then passes the token rows to the underlying TypeResolver
         to convert the tokens to their equivalent internal regex representations
 
         Parameters
         ----------
+        rowidx: int
+            row id
         value: str
             value to tokenize
 
@@ -79,9 +83,9 @@ class Tokenizer(object, metaclass=ABCMeta):
             list of tupled tokens
         """
         tokenized = list()
-        for value in column:
+        for rowidx, value in enumerate(column):
             value = value[0] if isinstance(value, list) or isinstance(value, tuple) else value
-            tokenized.append(self._tokenize_value(value=value))
+            tokenized.append(self._tokenize_value(rowidx=rowidx, value=value))
         return tokenized
 
     def encode(self, column):
@@ -101,7 +105,7 @@ class Tokenizer(object, metaclass=ABCMeta):
         if self.type_resolver is None:
             raise RuntimeError("type_resolver not found")
         encoded = list()
-        for value in column:
+        for rowidx, value in enumerate(column):
             value = value[0] if isinstance(value, list) or isinstance(value, tuple) else value
-            encoded.append(self._encode_value(value=value))
+            encoded.append(self._encode_value(rowidx=rowidx, value=value))
         return encoded

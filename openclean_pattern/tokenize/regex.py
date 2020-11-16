@@ -40,13 +40,15 @@ class RegexTokenizer(Tokenizer):
         self.regex = regex
         self.abbreviations = abbreviations
 
-    def _tokenize_value(self, value):
+    def _tokenize_value(self, rowidx, value):
         """ tokenizes a single row value by applying the regular expression splitter.
         if abbreviations == True, the dots will be stripped at this stage to type_recognize the initials together
         furthermore we split on underscores as they are considered as \w characters in regex
 
         Parameters
         ----------
+        rowidx: int
+            row id
         value: str
             value to tokenize
 
@@ -67,12 +69,14 @@ class RegexTokenizer(Tokenizer):
 
         return tuple([item for sublist in [re.split('(_)', j) for j in post_regex] for item in sublist])
 
-    def _encode_value(self, value):
+    def _encode_value(self, rowidx, value):
         """ tokenizes a single row value using the tokenize_value method. Then pass the token rows to
         the underlying TypeResolver to convert the tokens to their equivalent internal regex representations.
 
         Parameters
         ----------
+        rowidx: int
+            row id
         value: str
             value to tokenize
 
@@ -82,8 +86,8 @@ class RegexTokenizer(Tokenizer):
         """
         if not isinstance(self.type_resolver, TypeResolver):
             raise RuntimeError("type_resolver: {} not of type: DataTypeResolver".format(type(self.type_resolver)))
-        val = self._tokenize_value(value)
-        encoded = self.type_resolver.resolve_row(val)
+        val = self._tokenize_value(rowidx, value)
+        encoded = self.type_resolver.resolve_row(rowidx, val)
         return tuple(encoded)
 
 

@@ -53,18 +53,59 @@ class DateComparator(Comparator):
 
 
 class StringComparator(Comparator):
-    def character_comp_regex(self, s1, s2):
+    """Class of useful string comparison methods
+    """
+
+    @staticmethod
+    def compare_strings(s1, s2, ambiguous_char='X'):
+        """
+        Compares two strings in sequence of characters and replaces distinct characters with ambiguous character. Then
+        returns the new string along with an ambiguity ratio
+
+        Parameters
+        ----------
+        s1 : str
+            string 1
+        s2 : str
+            string 2
+        ambiguous_char: str
+            replaces the distinct characters with
+
+        Returns
+        -------
+            str, float
+        """
         smaller_size = min(len(s1), len(s2))
         new_string = ''
         for i in range(smaller_size):
             if s1[i] == s2[i]:
                 new_string += s1[i]
             else:
-                new_string += 'X'
+                new_string += ambiguous_char
         for j in range(abs(len(s1) - len(s2))):
-            new_string += 'X'
+            new_string += ambiguous_char
 
-        return new_string, new_string.count('X') / len(new_string)
+        return new_string, new_string.count(ambiguous_char) / len(new_string)
+
+    @staticmethod
+    def substring_finder(string1, string2):
+        anslist = []
+        len1, len2 = len(string1), len(string2)
+        for i in range(len1):
+            match = ""
+            for j in range(len2):
+                if (i + j < len1 and string1[i + j] == string2[j]):
+                    match += string2[j]
+                else:
+                    answer = match
+                    if answer != '' and len(answer) > 1:
+                        anslist.append(answer)
+                    match = ""
+            if match != '':
+                anslist.append(match)
+
+        return anslist
+
 
 
 class PatternComparator(Comparator):

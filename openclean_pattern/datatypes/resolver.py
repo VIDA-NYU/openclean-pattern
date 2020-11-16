@@ -32,21 +32,23 @@ class TypeResolver(metaclass=ABCMeta):
         list of tupled tokens
         """
         encoded = list()
-        for value in column:
+        for rowidx, value in enumerate(column):
             if isinstance(value, str):
                 value = [value]
             if not isinstance(value, list) and not isinstance(value, tuple):
                 raise ValueError("expected a list/tuple of str or openclean_pattern.tokenize.token.Token, got: {}".format(value))
-            encoded.append(self.resolve_row(tokenized_row=value))
+            encoded.append(self.resolve_row(rowidx=rowidx, tokenized_row=value))
         return encoded
 
     @abstractmethod
-    def resolve_row(self, tokenized_row):
+    def resolve_row(self, rowidx, tokenized_row):
         """returns the atomic / compound data type augmented row. this can be a combination of str
         and openclean_pattern.tokenize.token.Tokens
 
         Parameters
         ----------
+        rowidx: int
+            row id
         tokenized_row: tuple[str, openclean_pattern.tokenize.token.Token]
             token to check against the master data
 
@@ -94,12 +96,12 @@ class DefaultTypeResolver(TypeResolver):
         interceptors.append(AtomicTypeResolver())
         self.interceptors = interceptors
 
-    def resolve_row(self, tokenized_row):
+    def resolve_row(self, rowidx, tokenized_row):
         """passes through all the middlewares and adding found compound types and finally through the
         AtomicTypeResolver
         """
         for mw in self.interceptors:
-            tokenized_row = mw.resolve_row(tokenized_row)
+            tokenized_row = mw.resolve_row(rowidx, tokenized_row)
         return tokenized_row
 
     def get_vocabulary(self):
@@ -124,11 +126,13 @@ class AtomicTypeResolver(TypeResolver):
             OPTIONAL_REP = '?'
     """
 
-    def resolve_row(self, tokenized_row):
+    def resolve_row(self, rowidx, tokenized_row):
         """returns the data type
 
         Parameters
         ----------
+        rowidx: int
+            row id
         tokenized_row: tuple[str]
             tokens to check the data types of
 
@@ -150,7 +154,7 @@ class AtomicTypeResolver(TypeResolver):
                     type = SupportedDataTypes.SPACE_REP
                 else:
                     type = SupportedDataTypes.PUNCTUATION
-                token = Token(regex_type=type, size=len(token), value=token)
+                token = Token(regex_type=type, size=len(token), value=token, rowidx=rowidx)
             resolved.append(token)
 
         return tuple(resolved)
@@ -182,13 +186,16 @@ class CompoundTypeResolver(TypeResolver, metaclass=ABCMeta):
         self.words = words
         self.pt = PrefixTree(words)
 
-    def resolve_row(self, tokenized_row):
+    def resolve_row(self, rowidx, tokenized_row):
         """idenfifier compound data types in the tokenized_row and replaces them with Tokens.
 
         Parameters
         ----------
+        rowidx: int
+            row id
         tokenized_row: tuple[str]
             tokens to check against the master data
+
         Returns
         -------
             tuple[str, openclean_pattern.tokenize.token.Token]
@@ -207,7 +214,8 @@ class CompoundTypeResolver(TypeResolver, metaclass=ABCMeta):
                             ctype = self.get_label(split)
                             b.append(Token(regex_type=ctype,
                                            size=len(split),
-                                           value=split))
+                                           value=split,
+                                           rowidx=rowidx))
                         elif split != '':
                             b.append(split)
                     c.append(b)

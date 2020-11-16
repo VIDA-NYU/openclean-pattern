@@ -39,13 +39,14 @@ class GroupAligner(Aligner):
 
         Returns
         -------
-            a dict of lists with key 'n' representing the length and each inner list representing groups with n tokens
-        """
+             a dict of lists with key 'n' representing the length and each inner list representing row_indices of groups
+             with n tokens / row_index of part of the cluster
+       """
         groups = defaultdict()
-        for row in column:
+        for i, row in enumerate(column):
             n = len(row)
             if n not in groups:
                 groups[n] = list()
-            groups[n].append(row)
+            groups[n].append(i)
 
         return groups

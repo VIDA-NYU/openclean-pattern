@@ -13,8 +13,7 @@ from openclean_pattern.tokenize.regex import DefaultTokenizer
 
 
 def test_group_align(business):
-
-    """ensure group align groups same length tokens together"""
+    """Tests the group align class """
     dt = DefaultTokenizer()
     encoded = dt.encode(business['Address '])
 

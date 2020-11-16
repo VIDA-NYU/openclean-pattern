@@ -11,13 +11,15 @@ from openclean_pattern.patternfinder import PatternFinder
 
 import pytest
 
-def test_patternfinder_find2(business):
+def test_patternfinder_find(business):
     pf = PatternFinder(
         series=business['Address '],
         tokenizer='default',
         aligner='group'
     )
 
-    patterns = pf.find2()
-
-    patterns
+    patterns = pf.find()
+    assert len(patterns)==3
+    assert patterns[9] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
+    assert patterns[5] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
+    assert patterns[7] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']

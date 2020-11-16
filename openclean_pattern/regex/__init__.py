@@ -1,33 +1,6 @@
-# STRING = STRING_REP = '\W+' #'W'
-# ALPHA = ALPHA_REP = 'ALPHA' #'A'
-# ALPHANUM = ALPHANUM_REP = 'ALPHANUM' #'AN'
-# DIGIT = DIGIT_REP = 'NUMERIC' #'D'
-# PUNCTUATION = PUNCTUATION_REP = 'PUNC' #'P'
-# GAP = 'G'
-# SPACE_REP = '\S'
-# OPTIONAL_REP = '?'
+# This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# # SUPPORTED DOMAIN SPECIFIC TYPES
-# MONTH = 'MONTH'
-# WEEKDAY = 'WEEKDAY'
-# DATETIME = 'DATETIME'
-# STATE = 'STATE'
-# COUNTRY = 'COUNTRY'
-# COUNTY = 'COUNTY'
-# BE = 'BUSINESS'
-# STREET = 'STREET'
-# SUD = 'SUD' #SECONDARY_UNIT_DESIGNATOR
+# Copyright (C) 2020 New York University.
 #
-# supported_type_rep = {
-#     ALPHA: ALPHA_REP,
-#     ALPHANUM: ALPHANUM_REP,
-#     DIGIT: DIGIT_REP,
-#     MONTH: MONTH,
-#     WEEKDAY: WEEKDAY,
-#     STATE: STATE,
-#     COUNTY: COUNTY,
-#     COUNTRY: COUNTRY,
-#     BE: BE,
-#     STREET: STREET,
-#     SUD: SUD
-# }
+# openclean_pattern is released under the Revised BSD License. See file LICENSE for
+# full license details.

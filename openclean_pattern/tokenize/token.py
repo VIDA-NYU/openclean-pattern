@@ -10,10 +10,11 @@ class Token:
     '''
     internal representation of each token with key information intact
     '''
-    def __init__(self, regex_type, size, value):
+    def __init__(self, regex_type, size, value, rowidx):
         self.regex_type = regex_type
         self.size = int(size)
         self.value = value
+        self.rowidx = rowidx
 
     def __repr__(self):
         return f'_{self.regex_type.value!r}_({self.size!r},{self.value!r})'
