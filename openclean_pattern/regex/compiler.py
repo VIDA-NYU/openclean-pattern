@@ -89,30 +89,40 @@ class PatternColumn(defaultdict):
             shares[p.element_type] = self[p.element_type].freq / self.global_freq
         return shares
 
-    def get_top(self):
-        """gets the element type with the largest share
+    def get_top(self, n=1):
+        """gets the element type with the n ranked share
+
+        Parameters
+        ----------
+        n: int
+            ranking
 
         Returns
         -------
             str / int
         """
+        if n < 1:
+            raise ValueError("rank should be greater than zero")
+
+        n -= 1 # change rank to index
+
         shares = self.stats()
         sorted_shares = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
-        return sorted_shares[0][0]
+        return sorted_shares[n][0]
 
     def get_anomalies(self):
-            """gets the indices of rows that didnt match the majority share element type in this PatternColumn
+        """gets the indices of rows that didnt match the majority share element type in this PatternColumn
 
-            Returns
-            -------
-                list
-            """
-            top = self.get_top()
-            anomalies = list()
-            for p in self:
-                if p != top:
-                    [anomalies.append(id) for id in self[p].idx]
-            return anomalies
+        Returns
+        -------
+            list
+        """
+        top = self.get_top()
+        anomalies = list()
+        for p in self:
+            if p != top:
+                [anomalies.append(id) for id in self[p].idx]
+        return anomalies
 
 
     # todo: deserialize
@@ -252,11 +262,12 @@ class PatternColumnElement(object):
             # todo: because partial regex is built incrementally too, the order of token.values can have a huge impact on the results. Is there another way?
             new_partial_regex, ambiguity_ratio = StringComparator.compare_strings(self.partial_regex, new_token.value)
             if ambiguity_ratio > unknown_threshold:
-                self.partial_ambiguous = False
+                self.partial_ambiguous = True
             self.partial_regex = new_partial_regex
         self.len_min = min(self.len_min, new_token.size)
         self.len_max = max(self.len_max, new_token.size)
         self.freq += 1
+        self.idx.append(new_token.rowidx)
 
     def __str__(self):
         """String representation of the PatternColumnElement object

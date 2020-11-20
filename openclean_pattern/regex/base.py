@@ -128,7 +128,7 @@ class DefaultRegexCompiler(RegexCompiler):
 
         anomalies = set()
         for p in pattern:
-            anomalies.union(set(p[p.get_top()].idx))
+            anomalies = anomalies.union(set(p.get_anomalies()))
 
         return anomalies
 

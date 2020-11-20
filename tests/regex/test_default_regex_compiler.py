@@ -35,10 +35,9 @@ def test_default_regex_anomaly(business):
     tokenized = tokenizer.encode(business['Address '])
     alignments = aligner.align(tokenized)
 
+    pattern = compiler.compile(tokenized, alignments)
     anomalies = compiler.anomalies(tokenized, alignments)
 
-    # todo: check why arent anomalies correct. e.g. row#14 = 'ATTN HEATHER J HANSEN'. it should appear here in theory
-    # assert len(anomalies) == 0
-    # assert patterns[9] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
-    # assert patterns[5] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
-    # assert patterns[7] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
+    assert pattern[7] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
+    assert len(anomalies[7]) == 5 # except row#14, the other mismatches are e.g. those that had 14th (alphanum) instead of an alpha at position 2
+    assert 14 in anomalies[7] # index # 14 = 'ATTN HEATHER J HANSEN' which shouldnt match the pattern.
