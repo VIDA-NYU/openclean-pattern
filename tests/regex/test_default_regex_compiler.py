@@ -27,6 +27,7 @@ def test_default_regex_compiler(business):
     assert patterns[5] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
     assert patterns[7] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
 
+
 def test_default_regex_anomaly(business):
     compiler = DefaultRegexCompiler()
     tokenizer = DefaultTokenizer()

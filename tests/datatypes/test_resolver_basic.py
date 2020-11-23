@@ -5,21 +5,19 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""unit tests for atomic types resolver class"""
+"""unit tests for basic types resolver class"""
 
 from openclean_pattern.datatypes.base import SupportedDataTypes
-from openclean_pattern.datatypes.resolver import AtomicTypeResolver
+from openclean_pattern.datatypes.resolver import BasicTypeResolver
 from openclean_pattern.tokenize.regex import RegexTokenizer
 
 
-def test_atomic_resolver(dates):
+def test_basic_resolver(dates):
     row = 0
 
     rt = RegexTokenizer()
-    tokenized = rt._tokenize_value(row, dates.iloc[row][0])
-
-    at = AtomicTypeResolver()
-    encoded = at.resolve_row(row, tokenized)
+    at = BasicTypeResolver()
+    encoded = at.resolve_row(row, dates.iloc[row][0], rt._tokenize_value)
 
     # ["Monday, 21st March, 2019"],
     assert encoded[0].regex_type == SupportedDataTypes.ALPHA

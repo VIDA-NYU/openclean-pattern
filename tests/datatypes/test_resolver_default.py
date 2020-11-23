@@ -16,7 +16,7 @@ from openclean_pattern.tokenize.regex import RegexTokenizer
 def test_default_resolver_with_interceptor(dates):
     dt = DateResolver()
 
-    # create a Regex Tokenizer object that does both atomic and compound date type resolution
+    # create a Regex Tokenizer object that does both basic and non-basic date type resolution
     rt = RegexTokenizer(
         type_resolver=DefaultTypeResolver(
             interceptors=dt
@@ -38,10 +38,8 @@ def test_default_resolver_with_interceptor(dates):
 
 def test_default_resolver_without_interceptor(dates):
     rt = RegexTokenizer()
-    tokenized = rt.tokenize(dates.to_list())
-
     dt = DefaultTypeResolver()
-    encoded = dt.resolve(tokenized)
+    encoded = dt.resolve(dates.to_list(), rt)
 
     # ["Monday, 21st March, 2019"],
     assert encoded[0][0].regex_type == SupportedDataTypes.ALPHA

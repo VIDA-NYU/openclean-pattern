@@ -23,7 +23,7 @@ class TokenizerFactory(object):
         tokenizer: str
             name string of the tokenizer
         type_resolver: openclean_pattern.datatypes.resolver.TypeResolver (default: None)
-            type resolvers to incorporate compound datatypes
+            type resolvers to incorporate non-basic datatypes
         """
         if tokenizer == TOKENIZER_REGEX:
             return RegexTokenizer(type_resolver=type_resolver)

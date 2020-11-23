@@ -8,7 +8,6 @@
 """A collection of useful utility methods"""
 
 import re
-from openclean_pattern.datatypes.resolver import DateResolver
 from abc import ABCMeta, abstractmethod
 import random
 import bisect
@@ -41,15 +40,6 @@ class Comparator(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-
-class DateComparator(Comparator):
-
-    def __init__(self):
-        self.dt = DateResolver()
-
-    def compare(self, a, b):
-        if self.dt.is_datetime(a) != False:
-            return self.dt.is_datetime(b), 0
 
 
 class StringComparator(Comparator):
@@ -265,3 +255,38 @@ class RandomSampler(Sampler):
         random.seed(self.random_state)
         n = int(len(self.iterable) * self.n) if self.frac else int(self.n)
         return random.sample(self.iterable, n)
+
+### Helper methods
+
+
+def stringify(tokens):
+    from openclean_pattern.tokenize.token import Token
+    """ Accepts a list of tokens (strings and Tokens) and combines the strings together breaking it by any
+    Token objects in between
+    
+    Parameters
+    ----------
+    tokens : list of str and openclean_pattern.tokenize.token.Token
+        the values to stringify
+                
+    Returns
+    -------
+        list
+    """
+    stringified = list()
+    p = 0
+    val = ''
+    while p < len(tokens):
+        if isinstance(tokens[p], str):
+            val += tokens[p]
+        elif isinstance(tokens[p], Token):
+            if val != '':
+                stringified.append(val)
+            stringified.append(tokens[p])
+            val = ''
+        p += 1
+
+    if val != '':
+        stringified.append(val)
+
+    return stringified

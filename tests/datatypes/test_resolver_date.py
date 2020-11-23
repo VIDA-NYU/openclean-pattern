@@ -15,7 +15,7 @@ from openclean_pattern.tokenize.regex import RegexTokenizer
 def test_datetype_resolver(dates):
     dt = DateResolver()
 
-    # a tokenizer that only detects compound dates not atomic
+    # a tokenizer that only detects non-basic dates not basic
     rt = RegexTokenizer(type_resolver=dt)
     encoded = rt.encode(dates.to_list())
 

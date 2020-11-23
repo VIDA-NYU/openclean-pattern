@@ -10,13 +10,13 @@ About
 =====
 This package identifies regex patterns in data with the option of sequence aligning input values first. It supports the following data types:
 
-- Atomic
+- Basic
     - String
     - Integers
     - Punctuations
     - Spaces
 
-- Compound
+- Non-Basic/Advanced
     - Dates
         - days of the week and months
     - Business Entities
@@ -47,29 +47,27 @@ The library comes with many predefined classes to support the pattern detection 
 2. Tokenize it to remove punctutation. At this point TypeResolvers can also be injected to tokenize and encode in the same run instead of running it as a separate step 3:
     - Regex Tokenizer: tokenizes using the default regex that breaks the row values into a list of tokens keeping the delimiters intact (unless a user provides a custom regex). It also changes the tokens to lower case letters. The user also has the option to define if they want to consider e.g. the string 'a.b.c' as delimited by the '.' character or consider it as an abbreviation character and keep 'abc' intact.
     - Default Tokenizer Follows the Regex Tokenizer process and the uses the DefaultTypeResolver to resolve token types.
-3. Resolve Types. This stage converts the tokens to their Atomic and Compound representations:
-    - AtomicTypeResolver: converts the row into the above mentioned AtomicTypes.
-    - CompoundTypeResolver: has numerous implementations and new CompoundTypes can easily be added via the `openclean_pattern.datatypes.resolver.CompoundTypeResolver` class.
+3. Resolve Types. This stage converts the tokens to their basic and non-basic representations:
+    - BasicTypeResolver: converts the row into the above mentioned basicTypes.
+    - AdvancedTypeResolver: has numerous implementations and new non-basic types can easily be added via the `openclean_pattern.datatypes.resolver.AdvancedTypeResolver` class.
         - DateResolver
         - BusinessEntityResolver
         - AddressDesignatorResolver
         - GeoSpatialResolver
-    - DefaultTypeResolver: does both Atomic and Compound type resolution by letting a user add compound interceptors before the atomic type resolution operation.
+    - DefaultTypeResolver: does both basic and non-basic type resolution by letting a user add non-basic interceptors before the basic type resolution operation.
 4.  Alignment or grouping: group rows with similar lengths or perform a multiple seqeunce alignment by looking at possible token order combinations to align all rows:
         - GroupAlign
         - CombAlign* : looks at all the possible combinations of each token in each row with other all other rows, calculates the distance, clusters the closest alignments together using DBSCAN and returns the clustered groups.
 5. Compile a pattern.
-    -
+    - Compiles the pattern based on the positions of different tokens at in each row. It flags values that don't match the specific position's majority types as anomalies.
 
 
 * Not recommended for large datasets or cases where the number of combinations between rows is too large (e.g. one row has 16 tokens and other has 6, the total no. of distance computation just for this combination would be 16P6 =  5765760)
 
 Upcoming Modules
 ================
-- integration with datamart_geo for a GeospatialTypeResolver
 - ability to evaluate a regex on other columns
 - serializer / deserializer
-- anomalous pattern detection
 - multiple sequence alignment
 
 

@@ -14,7 +14,7 @@ class SupportedDataTypes(enum.Enum):
     """
     Enum class for all supported datatypes and their representations
     """
-    # ATOMIC TYPES
+    # BASIC TYPES
     STRING = STRING_REP = '\W+' #TODO: REQUIRED?
     ALPHA = ALPHA_REP = 'ALPHA'
     ALPHANUM = ALPHANUM_REP = 'ALPHANUM'
@@ -24,7 +24,7 @@ class SupportedDataTypes(enum.Enum):
     SPACE_REP = '\S'
     OPTIONAL_REP = '?' # POST REGEX OPTIONAL CHARACTER TODO: REQUIRED?
 
-    # SUPPORTED COMPOUND TYPES
+    # SUPPORTED NONBASIC TYPES
     MONTH = 'MONTH'
     WEEKDAY = 'WEEKDAY'
     DATETIME = 'DATETIME'
@@ -34,3 +34,11 @@ class SupportedDataTypes(enum.Enum):
     BE = 'BUSINESS'
     STREET = 'STREET'
     SUD = 'SUD' #SECONDARY_UNIT_DESIGNATOR
+
+    # DATAMART_GEO TYPES
+    ADMIN_LEVEL_0 = 'ADMIN_0'
+    ADMIN_LEVEL_1 = 'ADMIN_1'
+    ADMIN_LEVEL_2 = 'ADMIN_2'
+    ADMIN_LEVEL_3 = 'ADMIN_3'
+    ADMIN_LEVEL_4 = 'ADMIN_4'
+    ADMIN_LEVEL_5 = 'ADMIN_5'

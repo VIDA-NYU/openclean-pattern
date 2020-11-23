@@ -9,7 +9,7 @@ import pytest
 
 from openclean_pattern.tokenize.regex import RegexTokenizer
 from openclean_pattern.datatypes.base import SupportedDataTypes
-from openclean_pattern.datatypes.resolver import AtomicTypeResolver
+from openclean_pattern.datatypes.resolver import BasicTypeResolver
 
 """Unit test for the regex tokenizer"""
 
@@ -24,11 +24,7 @@ def test_regex_tokenizer_tokenize():
 
 
 def test_regex_tokenizer_encode():
-    dt = RegexTokenizer()
-    with pytest.raises(RuntimeError):
-        dt.encode(ROWS)
-
-    dt = RegexTokenizer(type_resolver=AtomicTypeResolver())
+    dt = RegexTokenizer(type_resolver=BasicTypeResolver())
     encoded = dt.encode(ROWS)
     assert encoded[0][0].value == '273' and encoded[0][0].size == 3 and encoded[0][0].regex_type == SupportedDataTypes.DIGIT
 

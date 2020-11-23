@@ -104,3 +104,7 @@ ENV/
 
 # Local dev config
 .idea/
+*.iml
+*.trie
+*.sqlite3
+*.json

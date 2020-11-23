@@ -13,7 +13,7 @@ from abc import ABCMeta, abstractmethod
 class Tokenizer(object, metaclass=ABCMeta):
     """ Tokenizer abstract class that enables strings to be broken down and Typechecked.
      It has multiple functions not limited to:
-        - Replace strings with Compound data types using TypeResolving encoders
+        - Replace strings with non-basic data types using TypeResolving encoders
         - Replace special characters
         - Tokenize on specified delimiters
     It accepts a list of strings and returns a list of tokenized tuples
@@ -26,7 +26,7 @@ class Tokenizer(object, metaclass=ABCMeta):
         tokenizer_name: str
             name of the tokenizer used by the tokenizer factory
         type_resolver: openclean_pattern.datatypes.resolver.TypeResolver (default: None)
-            type resolvers to incorporate compound and atomic datatypes
+            type resolvers to incorporate non-basic and basic datatypes
         case: Callable (default: str.lower)
             changes all values to this case. Incase the type resolver uses a prefix tree trained on preset vocabulary,
             the case of the tokens should match with the case here.
@@ -102,8 +102,6 @@ class Tokenizer(object, metaclass=ABCMeta):
         -------
         list of tupled tokens
         """
-        if self.type_resolver is None:
-            raise RuntimeError("type_resolver not found")
         encoded = list()
         for rowidx, value in enumerate(column):
             value = value[0] if isinstance(value, list) or isinstance(value, tuple) else value

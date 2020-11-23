@@ -18,11 +18,6 @@ class GroupAligner(Aligner):
     """This aligner creates groups based on the no. of tokens in each group"""
     def __init__(self):
         """intializes the Aligner object
-
-        Parameters
-        ----------
-        alignment_type: str
-            the align type to use to align the column tokens
         """
         super(GroupAligner, self).__init__(ALIGN_GROUP)
 

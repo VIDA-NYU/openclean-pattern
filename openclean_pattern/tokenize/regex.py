@@ -28,7 +28,7 @@ class RegexTokenizer(Tokenizer):
         regex: str
             the regular expression to tokenize on
         type_resolver: openclean_pattern.datatypes.resolver.TypeResolver (default: None)
-            type resolvers to incorporate compound datatypes
+            type resolvers to incorporate non-basic datatypes
         abbreviations: bool (default: False)
             by default, the content string is tokenized on all punctuation. If True, dots
             will not be included as a tokenizing delimiter as they represent abbreviations. A user
@@ -70,24 +70,40 @@ class RegexTokenizer(Tokenizer):
         return tuple([item for sublist in [re.split('(_)', j) for j in post_regex] for item in sublist])
 
     def _encode_value(self, rowidx, value):
-        """ tokenizes a single row value using the tokenize_value method. Then pass the token rows to
-        the underlying TypeResolver to convert the tokens to their equivalent internal regex representations.
+        """ Pass the token rows to the underlying TypeResolver to convert the tokens to their
+        equivalent internal regex representations
 
         Parameters
         ----------
         rowidx: int
             row id
         value: str
-            value to tokenize
+            value to tokenize/encode
 
         Returns
         -------
             tuple of openclean_pattern.tokenize.tokens
         """
-        if not isinstance(self.type_resolver, TypeResolver):
+        if self.type_resolver is not None and not isinstance(self.type_resolver, TypeResolver):
             raise RuntimeError("type_resolver: {} not of type: DataTypeResolver".format(type(self.type_resolver)))
-        val = self._tokenize_value(rowidx, value)
-        encoded = self.type_resolver.resolve_row(rowidx, val)
+
+        # recreate row after parsing abbreviations and case settings
+        tokenized_value = self._tokenize_value(rowidx, value)
+
+        if self.type_resolver is not None:
+            value = ''.join(tokenized_value)
+            encodings = self.type_resolver.resolve_row(rowidx, value, self._tokenize_value)
+            encoded = list()
+            for enc in encodings:
+                if isinstance(enc, str):
+                    enc = self._tokenize_value(rowidx, enc)
+                    for token in enc:
+                        encoded.append(token)
+                else:
+                    encoded.append(enc)
+        else:
+            encoded = tokenized_value
+
         return tuple(encoded)
 
 
@@ -95,7 +111,7 @@ TOKENIZER_DEFAULT = 'default'
 
 
 class DefaultTokenizer(RegexTokenizer):
-    """Default tokenizer class that splits on all punctuation and only encodes values into atomic types. More aptly,
+    """Default tokenizer class that splits on all punctuation and only encodes values into basic types. More aptly,
     it is a use case of the RegexTokenizer"""
 
     def __init__(self):
