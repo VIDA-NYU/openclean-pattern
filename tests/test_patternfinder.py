@@ -8,6 +8,7 @@
 """unit tests for the PatternFinder Class"""
 
 from openclean_pattern.patternfinder import PatternFinder
+from openclean_pattern.regex.base import DefaultRegexCompiler, RowWiseCompiler
 
 import pytest
 
@@ -15,11 +16,27 @@ def test_patternfinder_find(business):
     pf = PatternFinder(
         series=business['Address '],
         tokenizer='default',
-        aligner='group'
+        aligner='group',
+        compiler=RowWiseCompiler()
     )
 
     patterns = pf.find()
     assert len(patterns) == 3
-    assert patterns[9] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
-    assert patterns[5] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
-    assert patterns[7] == ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
+
+    types = ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
+    for elements, type in zip(patterns[9], types):
+        assert elements.element_type == type
+
+    pf = PatternFinder(
+        series=business['Address '],
+        tokenizer='default',
+        aligner='group',
+        compiler=DefaultRegexCompiler()
+    )
+
+    patterns = pf.find()
+    assert len(patterns) == 3
+
+    types = ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
+    for elements, type in zip(patterns[9], types):
+        assert elements == type

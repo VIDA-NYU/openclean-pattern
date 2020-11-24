@@ -13,7 +13,9 @@ from setuptools import setup, find_packages
 
 # todo: add
 install_requires = [
-
+    'pandas == 1.1.4',
+    'datamart_geo == 0.2',
+    'pygtrie == 2.3.3'
 ]
 
 # todo: add

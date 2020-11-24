@@ -8,7 +8,7 @@
 """the RegexCompiler class evaluates a RegexPattern from groups of openclean_pattern.tokenize.token.Tokens"""
 
 from abc import ABCMeta, abstractmethod
-from openclean_pattern.regex.compiler import PatternColumn
+from openclean_pattern.regex.compiler import PatternColumn, Patterns
 
 
 class RegexCompiler(metaclass=ABCMeta):
@@ -107,8 +107,12 @@ class DefaultRegexCompiler(RegexCompiler):
                 pattern[i].insert(tok)
 
         pooled_pattern = list()
+        idxs = set()
         for p in pattern:
             pooled_pattern.append(p.get_top())
+            if len(idxs) == 0:
+                idxs = set(p[p.get_top()].idx)
+            idxs = idxs.intersection(p[p.get_top()].idx)
 
         return pooled_pattern
 
@@ -133,4 +137,37 @@ class DefaultRegexCompiler(RegexCompiler):
         return anomalies
 
 
+class RowWiseCompiler(RegexCompiler):
+    """Compiles the full Regexp using PatternColumns with the same row pattern"""
 
+    def compile_group(self, group):
+        """Accepts individual groups and compiles a majority pooled pattern based on the top share
+
+        Parameters
+        ----------
+        group :  List[List[openclean_pattern.tokenize.token.Token]]
+            tokenized rows
+
+        Returns
+        -------
+            list of PatternColumnElement
+        """
+        patterns = Patterns()
+        for row in group:
+            patterns.insert(row)
+
+        top_pattern = patterns.get_top()
+        return patterns[top_pattern]
+
+    def group_mismatches(self, group):
+        """Retrieves the row idxs for rows that didn't match the majority pooled pattern
+
+        Returns
+        -------
+            set
+        """
+        patterns = Patterns()
+        for row in group:
+            patterns.insert(row)
+
+        return patterns.get_anomalies()

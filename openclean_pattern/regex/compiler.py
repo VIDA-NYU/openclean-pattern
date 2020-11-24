@@ -71,7 +71,7 @@ class PatternColumn(defaultdict):
         if token.regex_type.name in self:
             self[token.regex_type.name].update(token)
         else:
-            self[token.regex_type.name] = PatternColumnElement(token)
+            self[token.regex_type.name] = PatternElement(token)
 
         self.global_min = min(self.global_min, token.size)
         self.global_max = max(self.global_max, token.size)
@@ -194,7 +194,126 @@ class PatternColumn(defaultdict):
         return False
 
 
-class PatternColumnElement(object):
+
+class PatternRow(list):
+    def __init__(self, row):
+        """initializes the row object
+
+        Parameters
+        ----------
+        row :  list of Tokens
+            the list to evaluate the patterns from
+        """
+        super(PatternRow, self).__init__()
+        self.freq = 1
+        self.idx = set()
+        for r in row:
+            self.append(PatternElement(r))
+            self.idx.add(r.rowidx)
+
+    def update(self, row):
+        """updates the PatternRow object
+
+        Parameters
+        ----------
+        row : list of Tokens
+            the list to update the PatternRow from
+        """
+        for r, e in zip(row, self):
+            if e.element_type != r.regex_type.name:
+                raise TypeError("incompatible row inserted")
+            e.update(r)
+
+        self.idx.add(r.rowidx)
+        self.freq += 1
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other):
+        eq = len(self) == len(other)
+        for s, o in zip(self, other):
+            eq = eq and s == o
+        return eq and self.freq == other.freq and self.idx == other.idx
+
+    def __repr__(self):
+        vals = ''
+        for i in self:
+            vals += str(i)
+        return '{}({})'.format(self.__class__.__name__, vals)
+
+
+class Patterns(defaultdict):
+    def __init__(self):
+        super(Patterns, self).__init__()
+        self.global_freq = 0
+
+    def insert(self, row):
+        self.global_freq += 1
+        key = self.stringify(row)
+
+        if key not in self:
+            self[key] = PatternRow(row)
+        else:
+            self[key].update(row)
+
+
+    def stringify(self, row):
+        key = ''
+        for r in row:
+            key += '|' + str(r.regex_type.name)
+        return key.strip()
+
+    def stats(self):
+        """calculates shares of each element type in the column
+
+        Returns
+        -------
+            dict
+        """
+        shares = defaultdict(float)
+        for p in self:
+            shares[p] = self[p].freq / self.global_freq
+        return shares
+
+    def get_top(self, n=1):
+        """gets the element type with the n ranked share
+
+        Parameters
+        ----------
+        n: int
+            ranking
+
+        Returns
+        -------
+            str / int
+        """
+        if n < 1:
+            raise ValueError("rank should be greater than zero")
+
+        n -= 1 # change rank to index
+
+        shares = self.stats()
+        sorted_shares = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
+        return sorted_shares[n][0]
+
+    def get_anomalies(self):
+        """gets the indices of rows that didnt match the majority share element type in this PatternColumn
+
+        Returns
+        -------
+            list
+        """
+        top = self.get_top()
+        anomalies = list()
+        for p in self:
+            if p != top:
+                [anomalies.append(id) for id in self[p].idx]
+
+        return anomalies
+
+
+class PatternElement(object):
     """
     Element tracker for a single supported datatype that appear in the same column token position
     e.g.
@@ -270,7 +389,7 @@ class PatternColumnElement(object):
         self.idx.append(new_token.rowidx)
 
     def __str__(self):
-        """String representation of the PatternColumnElement object
+        """String representation of the PatternElement object
 
         Returns
         -------
@@ -281,3 +400,6 @@ class PatternColumnElement(object):
 
         pattern = self.regex if self.partial_ambiguous else self.partial_regex
         return '{}({}-{})'.format(pattern, self.len_min, self.len_max)
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__, self.element_type)

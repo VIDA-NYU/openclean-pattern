@@ -15,7 +15,7 @@ from openclean_pattern.align.factory import AlignerFactory
 from openclean_pattern.align.group import ALIGN_GROUP
 from openclean_pattern.align.base import Aligner
 
-from openclean_pattern.regex.base import DefaultRegexCompiler
+from openclean_pattern.regex.base import DefaultRegexCompiler, RowWiseCompiler, RegexCompiler
 # from openclean_pattern.evaluate import Evaluator
 
 from openclean_pattern.utils.utils import WeightedRandomSampler
@@ -30,11 +30,13 @@ class PatternFinder(object):
     """
     PatternFinder class to identify patterns and anomalies
     """
+
     def __init__(self,
                  series: Union[Dict, List],
                  frac: float = 1,
                  tokenizer: Union[str, Tokenizer] = TOKENIZER_DEFAULT,
-                 aligner: Union[str, Aligner] = ALIGN_GROUP) -> None:
+                 aligner: Union[str, Aligner] = ALIGN_GROUP,
+                 compiler: RegexCompiler = None) -> None:
         """
         Initialize the pattern finder class. This assumes that the input columns have been sampled if too large
 
@@ -50,13 +52,13 @@ class PatternFinder(object):
             the aligner to use
         """
         self.series = self._sample(series, frac)
-        self._tokenizer = tokenizer if isinstance(tokenizer, Tokenizer) else TokenizerFactory.create_tokenizer(tokenizer)
+        self._tokenizer = tokenizer if isinstance(tokenizer, Tokenizer) else TokenizerFactory.create_tokenizer(
+            tokenizer)
         self._aligner = aligner if isinstance(aligner, Aligner) else AlignerFactory.create_aligner(aligner)
-        # self._distance_array = None
         self._aligned = None
-        # self.clusters = None
         self.regex = None
         self.outliers = dict()
+        self._compiler = compiler if compiler is not None else RowWiseCompiler()
 
     def _sample(self, series, frac):
         '''
@@ -73,13 +75,22 @@ class PatternFinder(object):
         -------
             list of samples selected from the input sequence
         '''
+        # to prevent ordering change incase frac == 1
+        if frac == 1:
+            if isinstance(series, pd.Series):
+                series = series.to_list()
+            if isinstance(series, list):
+                return [str.replace(str.lower(str(s)), '\'', '') for s in series]
+            elif isinstance(series, dict):
+                return WeightedRandomSampler.counter_to_list(Counter({str.replace(str.lower(str(s)), '\'', ''): i for s, i in series.items()}))
+
         # for now, remove apostrophes
         if isinstance(series, pd.Series):
             series = series.to_list()
         if isinstance(series, dict):
-            series = Counter({str.replace(str.lower(str(s)),'\'',''): i for s, i in series.items()})
+            series = Counter({str.replace(str.lower(str(s)), '\'', ''): i for s, i in series.items()})
         elif isinstance(series, list):
-            series = Counter([str.replace(str.lower(str(s)),'\'','') for s in series])
+            series = Counter([str.replace(str.lower(str(s)), '\'', '') for s in series])
         else:
             raise ValueError("Input column not valid")
 
@@ -94,7 +105,8 @@ class PatternFinder(object):
         '''
         if self._aligned is None:
             if self._aligner is not None:
-                aligned = self._aligner.get_aligned(tokens.tolist())  # todo: fix lingpy to return df:[tokens,cluster] not np array
+                aligned = self._aligner.get_aligned(
+                    tokens.tolist())  # todo: fix lingpy to return df:[tokens,cluster] not np array
             else:
                 aligned = pd.DataFrame(tokens)
                 aligned['cluster'] = tokens.apply(len)
@@ -122,7 +134,7 @@ class PatternFinder(object):
             aligned = aligned.drop(pat_column, 1)
 
         aligned_series = series.merge(aligned, left_on='encoded_tokens', right_on='pre_align_tokens')
-        self.clusters = aligned_series[['column','cluster']]
+        self.clusters = aligned_series[['column', 'cluster']]
 
         proportion = dict(aligned_series.groupby('cluster').agg('freq').sum() / aligned_series.freq.sum())
         column_length = aligned_series.freq.sum()
@@ -132,15 +144,18 @@ class PatternFinder(object):
         sample = dict()
         for cluster in aligned_series['cluster'].unique():
             if cluster == -1:
-                continue # -1 is the noise cluster with anything that did not align
+                continue  # -1 is the noise cluster with anything that did not align
 
             this_cluster = aligned_series[aligned_series['cluster'] == cluster]
             cluster_lens = dict(this_cluster['len'].value_counts())
             most_lens = max(cluster_lens.items(), key=operator.itemgetter(1))[0]
             if len(cluster_lens) > 1:
-                warnings.warn('Values of different length found to be passed to the Regex Compiler for cluster {}. This is an indication of buggy alignment but can be ignored if values were intentionally not aligned. For now, using values with {} tokens (most dominant length).'.format(cluster, most_lens))
+                warnings.warn(
+                    'Values of different length found to be passed to the Regex Compiler for cluster {}. This is an indication of buggy alignment but can be ignored if values were intentionally not aligned. For now, using values with {} tokens (most dominant length).'.format(
+                        cluster, most_lens))
 
-            indices = aligned_series[(aligned_series['cluster'] == cluster) & (aligned_series['len'] == most_lens)].index
+            indices = aligned_series[
+                (aligned_series['cluster'] == cluster) & (aligned_series['len'] == most_lens)].index
             sample[cluster] = aligned_series.loc[indices[0], 'column']
             regex_matrix = aligned_series.loc[indices, pat_column].to_numpy()
             results[cluster], generalized[cluster] = RegexCompiler.generate_regex_from_matrix(regex_matrix)
@@ -153,76 +168,78 @@ class PatternFinder(object):
                 if v < .05:
                     anomalous.append(k)
 
-        self.outliers = aligned_series[aligned_series['cluster'].isin(anomalous)].groupby('column').agg('freq').sum().to_dict()
+        self.outliers = aligned_series[aligned_series['cluster'].isin(anomalous)].groupby('column').agg(
+            'freq').sum().to_dict()
 
         result = dict()
-        result['Pattern'], result['Generalized'], result['Proportion'], result['Sample'] = results, generalized, proportion, sample
+        result['Pattern'], result['Generalized'], result['Proportion'], result[
+            'Sample'] = results, generalized, proportion, sample
         self.regex = pd.DataFrame(result).reset_index()
 
         return self.regex
         # return results, generalized, proportion, sample, aligned_series, column_length
 
     # def find(self):
-        # pat_column = 'tokens'
-        #
-        # series = self.series
-        # tokenizer = self._tokenizer
-        # series['tokens'] = tokenizer.tokenize(series['column'])
-        # series['column_recovered'] = series.tokens.str.join('') # for tokens that were replaced to richer types
-        #
-        # aligned = self._align(series[pat_column]) #todo: fix lingpy to return df:[tokens,cluster] not np array
-        # self._aligned = aligned['aligned']
-        #
-        # aligned['column_recovered'] = aligned[pat_column].str.join('')
-        # aligned['aligned_recovered'] = aligned['aligned'].str.join('')
-        #
-        # aligned_series = series.merge(aligned.drop([pat_column], 1), on=['column_recovered'])
-        #
-        # self.clusters = aligned_series[['column','cluster']]
-        #
-        # proportion = dict(aligned_series.groupby('cluster').agg('freq').sum() / aligned_series.freq.sum())
-        # column_length = aligned_series.freq.sum()
-        # frequency_dict = aligned_series.groupby('aligned_recovered').agg('freq').sum().to_dict()
-        #
-        # results = dict()
-        # generalized = dict()
-        # sample = dict()
-        # for cluster in aligned_series['cluster'].unique():
-        #     if cluster == -1:
-        #         continue # -1 is the noise cluster with anything that did not align
-        #
-        #     this_cluster = aligned_series[aligned_series['cluster'] == cluster]
-        #     cluster_lens = dict(this_cluster['len'].value_counts())
-        #     most_lens = max(cluster_lens.items(), key=operator.itemgetter(1))[0]
-        #     if len(cluster_lens) > 1:
-        #         warnings.warn('Values of different length found to be passed to the Regex Compiler for cluster {}. This is an indication of buggy alignment but can be ignored if values were intentionally not aligned. For now, using values with {} tokens (most dominant length).'.format(cluster, most_lens))
-        #
-        #     indices = aligned_series[(aligned_series['cluster'] == cluster) & (aligned_series['len'] == most_lens)].index
-        #     np_aligned_rows = list()
-        #     [np_aligned_rows.append(r) for r in aligned_series.iloc[indices]['aligned']]
-        #     np_aligned_rows = np.array(np_aligned_rows)
-        #
-        #     sample[cluster] = np_aligned_rows[0]
-        #
-        #     regex_matrix, regex_str = RegexCompiler.compile(aligned_rows=np_aligned_rows, frequency_dict=frequency_dict)
-        #     results[cluster], generalized[cluster] = RegexCompiler.generate_regex_from_matrix(regex_matrix)
-        #
-        # if self._aligner is not None:
-        #     anomalous = [-1]
-        # else:
-        #     anomalous = list()
-        #     for k, v in proportion.items():
-        #         if v < .05:
-        #             anomalous.append(k)
-        #
-        # self.outliers = aligned_series[aligned_series['cluster'].isin(anomalous)].groupby('column').agg('freq').sum().to_dict()
-        #
-        # result = dict()
-        # result['Pattern'], result['Generalized'], result['Proportion'], result['Sample'] = results, generalized, proportion, sample
-        # self.regex = pd.DataFrame(result).reset_index()
-        #
-        # return self.regex
-        # # return results, generalized, proportion, sample, aligned_series, column_length
+    # pat_column = 'tokens'
+    #
+    # series = self.series
+    # tokenizer = self._tokenizer
+    # series['tokens'] = tokenizer.tokenize(series['column'])
+    # series['column_recovered'] = series.tokens.str.join('') # for tokens that were replaced to richer types
+    #
+    # aligned = self._align(series[pat_column]) #todo: fix lingpy to return df:[tokens,cluster] not np array
+    # self._aligned = aligned['aligned']
+    #
+    # aligned['column_recovered'] = aligned[pat_column].str.join('')
+    # aligned['aligned_recovered'] = aligned['aligned'].str.join('')
+    #
+    # aligned_series = series.merge(aligned.drop([pat_column], 1), on=['column_recovered'])
+    #
+    # self.clusters = aligned_series[['column','cluster']]
+    #
+    # proportion = dict(aligned_series.groupby('cluster').agg('freq').sum() / aligned_series.freq.sum())
+    # column_length = aligned_series.freq.sum()
+    # frequency_dict = aligned_series.groupby('aligned_recovered').agg('freq').sum().to_dict()
+    #
+    # results = dict()
+    # generalized = dict()
+    # sample = dict()
+    # for cluster in aligned_series['cluster'].unique():
+    #     if cluster == -1:
+    #         continue # -1 is the noise cluster with anything that did not align
+    #
+    #     this_cluster = aligned_series[aligned_series['cluster'] == cluster]
+    #     cluster_lens = dict(this_cluster['len'].value_counts())
+    #     most_lens = max(cluster_lens.items(), key=operator.itemgetter(1))[0]
+    #     if len(cluster_lens) > 1:
+    #         warnings.warn('Values of different length found to be passed to the Regex Compiler for cluster {}. This is an indication of buggy alignment but can be ignored if values were intentionally not aligned. For now, using values with {} tokens (most dominant length).'.format(cluster, most_lens))
+    #
+    #     indices = aligned_series[(aligned_series['cluster'] == cluster) & (aligned_series['len'] == most_lens)].index
+    #     np_aligned_rows = list()
+    #     [np_aligned_rows.append(r) for r in aligned_series.iloc[indices]['aligned']]
+    #     np_aligned_rows = np.array(np_aligned_rows)
+    #
+    #     sample[cluster] = np_aligned_rows[0]
+    #
+    #     regex_matrix, regex_str = RegexCompiler.compile(aligned_rows=np_aligned_rows, frequency_dict=frequency_dict)
+    #     results[cluster], generalized[cluster] = RegexCompiler.generate_regex_from_matrix(regex_matrix)
+    #
+    # if self._aligner is not None:
+    #     anomalous = [-1]
+    # else:
+    #     anomalous = list()
+    #     for k, v in proportion.items():
+    #         if v < .05:
+    #             anomalous.append(k)
+    #
+    # self.outliers = aligned_series[aligned_series['cluster'].isin(anomalous)].groupby('column').agg('freq').sum().to_dict()
+    #
+    # result = dict()
+    # result['Pattern'], result['Generalized'], result['Proportion'], result['Sample'] = results, generalized, proportion, sample
+    # self.regex = pd.DataFrame(result).reset_index()
+    #
+    # return self.regex
+    # # return results, generalized, proportion, sample, aligned_series, column_length
 
     def evaluate(self, column, encode=False):
         assert isinstance(column, dict) or isinstance(column, list)
@@ -236,7 +253,7 @@ class PatternFinder(object):
                 x[-1] = x[-1][:-1]
             return x
 
-        patterns = self.regex[['index','Pattern','Generalized']].dropna(how='any').set_index('index').stack()
+        patterns = self.regex[['index', 'Pattern', 'Generalized']].dropna(how='any').set_index('index').stack()
         if isinstance(patterns, pd.Series) and not patterns.empty:
             eval_patterns = patterns.str.strip().str.split('\] \[').apply(rem_pads).to_dict()
         else:
@@ -260,10 +277,36 @@ class PatternFinder(object):
         column = self.series
         tokenizer = self._tokenizer
         aligner = self._aligner
-        compiler = DefaultRegexCompiler()
+        compiler = self._compiler
 
-        tokenized = tokenizer.encode(column) # encode is a two step method. it does both, the tokenization and the type resolution in the same go
-        alignments = aligner.align(tokenized)
+        tokenized = tokenizer.encode(
+            column)  # encode is a two step method. it does both, the tokenization and the type resolution in the same go
+        self._aligned = aligner.align(tokenized)
 
-        regex = compiler.compile(tokenized, alignments)
-        return regex
+        self.regex = compiler.compile(tokenized, self._aligned)
+        self.outliers = compiler.anomalies(tokenized, self._aligned)
+
+        return self.regex
+
+    def top(self, n=1):
+        """ get the nth top pattern
+
+        Parameters
+        ----------
+        n: int
+            the rank
+        """
+        if self.regex is None:
+            self.find()
+
+        if n < 1:
+            raise ValueError("rank should be greater than zero")
+
+        n -= 1  # change rank to index
+
+        shares = dict()
+        for key, pattern in self.regex.items():
+            shares[pattern] = pattern.freq / len(self.series)
+
+        sorted_shares = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
+        return sorted_shares[n][0]
