@@ -1,35 +1,83 @@
-import io
-import os
-from setuptools import setup
+# This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
+#
+# Copyright (C) 2020 New York University.
+#
+# openclean_pattern is released under the Revised BSD License. See file LICENSE for
+# full license details.
+
+"""Required packages for install, test, docs, and tests."""
 
 
-os.chdir(os.path.abspath(os.path.dirname(__file__)))
+import os, re
+from setuptools import setup, find_packages
+
+# todo: add
+install_requires = [
+    'pandas == 1.1.4',
+    'datamart_geo == 0.2',
+    'pygtrie == 2.3.3'
+]
+
+# todo: add
+tests_require = [
+    'coverage>=5.0',
+    'pytest',
+    'pytest-cov'
+]
+
+
+dev_require = ['flake8'] + tests_require
+
+
+extras_require = {
+    'docs': [
+        'Sphinx',
+        'sphinx-rtd-theme'
+    ],
+    'tests': tests_require,
+    'dev': dev_require
+}
+
+
+# Get the version string from the version.py file in the openclean-patternpackage.
+with open(os.path.join('openclean_pattern', 'version.py'), 'rt') as f:
+    filecontent = f.read()
+match = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", filecontent, re.M)
+if match is not None:
+    version = match.group(1)
+else:
+    raise RuntimeError('unable to find version string in %s.' % (filecontent,))
+
+
+# Get long project description text from the README.rst file
+with open('README.rst', 'rt') as f:
+    description = f.read()
+
 
 # todo: update urls
-with io.open('README.rst', encoding='utf-8') as fp:
-    description = fp.read()
-setup(name='openclean',
-      version='0.1',
-      packages=['openclean_re'],
-      description="OpenClean Regex Anomaly Detection",
-      author="Munaf Qazi",
-      author_email='munaf@nyu.edu',
-      maintainer="Munaf Qazi",
-      maintainer_email='munaf@nyu.edu',
-      url='https://gitlab.com/ViDA-NYU/',
-      project_urls={
-          'Homepage': 'https://gitlab.com/ViDA-NYU/',
-          'Source': 'https://gitlab.com/ViDA-NYU/',
-          'Tracker': 'https://gitlab.com/ViDA-NYU/',
-      },
-      long_description=description,
-      license='BSD-3-Clause',
-      keywords=['openclean'],
-      classifiers=[
-          'Development Status :: 2 - Pre-Alpha',
-          'Intended Audience :: Science/Research',
-          'License :: Free for non-commercial use',
-          'Natural Language :: English',
-          'Operating System :: OS Independent',
-          'Programming Language :: Python :: 3 :: Only',
-          'Topic :: Database'])
+setup(
+    name='openclean_pattern',
+    version=version,
+    description="Library for pattern and anomalous pattern detection",
+    long_description=description,
+    long_description_content_type='text/x-rst',
+    keywords=['openclean_pattern','pattern detection'],
+    url='https://github.com/VIDA-NYU/openclean-pattern',
+    author='Munaf Qazi',
+    author_email='munaf.qazi@gmail.com',
+    license='New BSD',
+    license_file='LICENSE',
+    packages=find_packages(exclude=('tests',)),
+    include_package_data=True,
+    extras_require=extras_require,
+    tests_require=tests_require,
+    install_requires=install_requires,
+    classifiers=[
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python'
+    ]
+)
