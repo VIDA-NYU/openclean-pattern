@@ -7,7 +7,7 @@
 
 """unit tests for the sampler class"""
 
-from openclean_pattern.utils.utils import RandomSampler, WeightedRandomSampler
+from openclean_pattern.utils.utils import RandomSampler, WeightedRandomSampler, Distinct
 from collections import Counter
 
 DICT_DATA = {
@@ -49,5 +49,16 @@ def test_random_sampler():
     assert len(sampled.keys()) == 3 # with equal weighing at this random state, '2 MERCER ST' doesnt get selected
     assert sampled['3 GOLD ST'] == 3
     assert sampled['2 MERCER ST'] == 0
+    assert sampled['1 BLEECKER ST'] == 1
+    assert sampled['0 JAY ST'] == 1
+
+def test_distinct_sampler():
+    sampler = Distinct(iterable=LIST_DATA)
+    sample = sampler.sample()
+    sampled = Counter(sample)
+
+    assert len(sampled.keys()) == 4
+    assert sampled['3 GOLD ST'] == 1
+    assert sampled['2 MERCER ST'] == 1
     assert sampled['1 BLEECKER ST'] == 1
     assert sampled['0 JAY ST'] == 1

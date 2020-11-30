@@ -8,12 +8,12 @@
 """unit tests for patterns class"""
 
 
-from openclean_pattern.regex.base import RowWiseCompiler
+from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.tokenize.regex import DefaultTokenizer
 from openclean_pattern.align.group import GroupAligner
 
 def test_patterns_object(business):
-    compiler = RowWiseCompiler()
+    compiler = DefaultRegexCompiler()
     tokenizer = DefaultTokenizer()
     aligner = GroupAligner()
 

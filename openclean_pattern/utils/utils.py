@@ -256,6 +256,28 @@ class RandomSampler(Sampler):
         n = int(len(self.iterable) * self.n) if self.frac else int(self.n)
         return random.sample(self.iterable, n)
 
+
+class Distinct(Sampler):
+    """Class to select only the distinct values from the input iterable"""
+    def __init__(self, iterable):
+        """initizlizes the Distinct class
+
+        Parameters
+        ----------
+        iterable: Iterable
+            the iterable class object which has data to be sampled
+        """
+        super(Distinct, self).__init__(iterable, 1)
+
+    def __call__(self, *args, **kwargs):
+        """Method to distinct-ify the input iterable sequence
+
+        Returns
+        -------
+            distinct list of rows
+        """
+        return list(set(self.iterable))
+
 ### Helper methods
 
 
