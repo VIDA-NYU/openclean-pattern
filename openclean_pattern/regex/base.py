@@ -16,29 +16,64 @@ from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.utils.utils import StringComparator
 
 
-### Row/Column Pattern Containers
+### Row/Column Pattern
 
-class PatternContainer(metaclass=ABCMeta):
-    """Contains PatternElemnts used inside the Patterns class to store a single row / column pattern"""
+class Pattern(metaclass=ABCMeta):
+    """Contains PatternElements used inside the Patterns class to store a single row / column pattern"""
+
     def __init__(self, container):
+        """Initialize the Pattern class"""
         self.container = container
         self.freq = 0
         self.idx = set()
 
     @abstractmethod
     def update(self, tokens):
-        """update using the tokens, the list (of Pattern Elements"""
+        """update using the tokens, the list (of Pattern Elements
+
+        Parameters
+        ----------
+         tokens: Token
+            the tokens to use create the Pattern
+        """
         raise NotImplementedError()
+
+    def evaluate(self, value):
+        """Evaluates the given value against the pattern and returns a boolean
+
+        Parameters
+        ----------
+        value: str
+            value to compare with the pattern
+        """
+        raise NotImplementedError()
+
+    def __iter__(self):
+        return iter(self.container)
 
     def __repr__(self):
         return str(self.container)
 
-class Row(PatternContainer):
+    def __len__(self):
+        return len(self.container)
+
+
+class SingularRowPattern(Pattern):
+    """Class to create / store a singular pattern created from a row / condensed into a row form"""
+
     def __init__(self):
+        """initializes the class"""
         container = list()
-        super(Row, self).__init__(container)
+        super(SingularRowPattern, self).__init__(container)
 
     def update(self, tokens):
+        """update using the tokens, the list (of Pattern Elements
+
+        Parameters
+        ----------
+         tokens: Token
+            the tokens to use create the Pattern
+        """
         for r, e in zip(tokens, self.container):
             if e.element_type != r.regex_type.name:
                 raise TypeError("incompatible row inserted")
@@ -47,17 +82,32 @@ class Row(PatternContainer):
         self.idx.add(r.rowidx)
         self.freq += 1
 
+    def __eq__(self, other):
+        for s, o in zip(self, other):
+            if s.element_type != o.element_type:
+                return False
+        return len(self) == len(other)
 
-class Column(PatternContainer):
+
+class SingularColumnPattern(Pattern):
+    """Class to create / store a singular patterns created from a row"""
+
     def __init__(self):
+        """initializes the class"""
         container = dict()
-        super(Column, self).__init__(container)
+        super(SingularColumnPattern, self).__init__(container)
         self.column_min = np.inf
         self.column_max = -np.inf
         self.column_freq = 0
 
     def update(self, tokens):
-        """update the column items"""
+        """update the column pattern using the tokens, the list (of Pattern Elements
+
+        Parameters
+        ----------
+         tokens: Token
+            the tokens to use create the Pattern
+        """
         if isinstance(tokens, Token):
             tokens = [tokens]
         for token in tokens:
@@ -74,7 +124,7 @@ class Column(PatternContainer):
         self.column_min = min(self.column_min, token.size)
         self.column_max = max(self.column_max, token.size)
 
-    def condense(self):
+    def top(self):
         """returns the top PatternElement in the column
 
         Returns
@@ -89,7 +139,8 @@ class Column(PatternContainer):
                 max = top.freq
         return top
 
-### Patterns dicts
+
+### Pattern Dicts
 
 
 class Patterns(defaultdict, metaclass=ABCMeta):
@@ -229,7 +280,7 @@ class RowPatterns(Patterns):
         key = Patterns.keygen(types)
 
         if key not in self:
-            self[key] = Row()
+            self[key] = SingularRowPattern()
             for r in row:
                 self[key].container.append(PatternElement(r))
             self[key].freq += 1
@@ -302,7 +353,7 @@ class ColumnPatterns(Patterns):
                 raise TypeError("expected: openclean_pattern.tokenize.token.Token, got: {}".format(token.__class__))
 
             if key not in self:
-                self[key] = Column()
+                self[key] = SingularColumnPattern()
 
             self[key].update(token)
 
@@ -315,7 +366,7 @@ class ColumnPatterns(Patterns):
         """
         pattern = list()
         for ind, col in self.items():
-            pattern.append(col.condense())
+            pattern.append(col.top())
 
         types = list()
         [types.append(i.element_type) for i in pattern]
@@ -323,7 +374,7 @@ class ColumnPatterns(Patterns):
         key = Patterns.keygen(pattern)
 
         patterns = RowPatterns()
-        patterns[key] = Row()
+        patterns[key] = SingularRowPattern()
 
         # add patterns and idx and freq of pattern
         for pat in pattern:
@@ -342,7 +393,8 @@ class ColumnPatterns(Patterns):
 
         return patterns
 
-### Pattern element / building block
+
+### Pattern element / building blocks
 
 
 class PatternElement(object):
@@ -361,7 +413,7 @@ class PatternElement(object):
 
         self.idx = [0, 1] #list of indices that went into this element. useful to trace anomalies back to rows
 
-        self.punc_list = [] #list of punc tokens if this is a PUNCTUATION elemenet
+        self.punc_list = [] #list of punc tokens if this is a PUNCTUATION element
 
         self.partial_regex = 23X #partial regex value
         self.partial_ambiguous = False #is partial regex value too ambiguous to be used

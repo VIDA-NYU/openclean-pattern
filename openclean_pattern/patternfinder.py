@@ -16,11 +16,12 @@ from openclean_pattern.align.group import ALIGN_GROUP
 from openclean_pattern.align.base import Aligner
 
 from openclean_pattern.regex.compiler import DefaultRegexCompiler, RegexCompiler
-# from openclean_pattern.evaluate import Evaluator
+from openclean_pattern.evaluate.evaluator import Evaluator
 
 from openclean_pattern.utils.utils import WeightedRandomSampler, Distinct
+from openclean_pattern.regex.base import Pattern
 
-import numpy as np, pandas as pd, operator, warnings
+import pandas as pd
 
 from typing import Union, List, Dict
 from collections import Counter
@@ -32,7 +33,6 @@ class PatternFinder(object):
     """
 
     def __init__(self,
-                 series: Union[Dict, List],
                  frac: float = 1,
                  distinct: bool = True,
                  tokenizer: Union[str, Tokenizer] = TOKENIZER_DEFAULT,
@@ -43,8 +43,6 @@ class PatternFinder(object):
 
         Parameters
         ----------
-        series: list or dict
-            list of column values or dict of column values:frequency
         frac: float
             sample size
         tokenizer: str or object of class Tokenizer (default: 'default')
@@ -52,7 +50,8 @@ class PatternFinder(object):
         aligner: str (default: 'group')
             the aligner to use
         """
-        self.series = self._sample(series, frac, distinct)
+        self.frac = frac
+        self.distinct = distinct
         self._tokenizer = tokenizer if isinstance(tokenizer, Tokenizer) else TokenizerFactory.create_tokenizer(
             tokenizer)
         self._aligner = aligner if isinstance(aligner, Aligner) else AlignerFactory.create_aligner(aligner)
@@ -61,13 +60,13 @@ class PatternFinder(object):
         self.outliers = dict()
         self._compiler = compiler if compiler is not None else DefaultRegexCompiler()
 
-    def _sample(self, series, frac, distinct):
+    def _sample(self, series: Union[List, Dict, pd.Series], frac: float, distinct: bool):
         '''
         randomly samples large columns and resolves frequency
 
         Parameters
         ----------
-        series: list or dict
+        series: list or dict or pd.Series
             list of column values or dict of column values:frequency
         param frac:  int
             distance to use for clustering
@@ -108,68 +107,59 @@ class PatternFinder(object):
 
         return WeightedRandomSampler(weights=series, n=frac, random_state=42).sample()
 
-    def _align(self, tokens):
-        '''
-        align - memoized. Default alignment is the light weight version which only aggregates by # of tokens
-        :param tokens: list of tokenized column values
-        :type tokens: pd.Series
-        :return: numpy array / df
-        '''
-        if self._aligned is None:
-            if self._aligner is not None:
-                aligned = self._aligner.get_aligned(
-                    tokens.tolist())
-            else:
-                aligned = pd.DataFrame(tokens)
-                aligned['cluster'] = tokens.apply(len)
-                aligned['aligned'] = tokens
+    def evaluate(self, pattern: Pattern, values: Union[List[str], str], negate=False):
+        """Get an instance of a value function that is predicate which can be
+        used to test whether an given value is accepted by the pattern or not.
 
-            aligned['pre_align_tokens'] = tokens
-            aligned['len'] = aligned['aligned'].str.len()
+        Parameters
+        ----------
+        pattern : Pattern
+            The pattern to evaluate the values against
+        values :  List[str] or str
+            The value or list of values
+        negate: bool, default=False
+            If the negate flag is True, the returned predicate should return
+            True for values that are not accepted by the pattern and False for
+            those that are accepted.
 
-            self._aligned = aligned
-        return self._aligned
-
-    # def evaluate(self, column, encode=False):
-    #     assert isinstance(column, dict) or isinstance(column, list)
-    #     column = self._sample(column, 1)
-    #
-    #     def rem_pads(x):
-    #         if len(x) == 1:
-    #             x[0] = x[0][1:-1]
-    #         elif len(x) > 1:
-    #             x[0] = x[0][1:]
-    #             x[-1] = x[-1][:-1]
-    #         return x
-    #
-    #     patterns = self.regex[['index', 'Pattern', 'Generalized']].dropna(how='any').set_index('index').stack()
-    #     if isinstance(patterns, pd.Series) and not patterns.empty:
-    #         eval_patterns = patterns.str.strip().str.split('\] \[').apply(rem_pads).to_dict()
-    #     else:
-    #         raise TypeError("Incorrect patterns format")
-    #
-    #     tokenizer = self._tokenizer
-    #     freq = column.groupby('column').agg('freq').sum().to_dict()
-    #     if encode:
-    #         regex_matrix, _ = tokenizer.encode(column['column'], freq=freq)
-    #         matched = Evaluator.evaluate_matrix(regex_matrix, eval_patterns)
-    #     else:
-    #         column['tokens'] = tokenizer.tokenize(column['column'])
-    #         np_aligned_rows = column['tokens'].tolist()
-    #         matched = Evaluator.evaluate_tokens(np_aligned_rows, freq, eval_patterns)
-    #
-    #     return matched
-
-    def find(self):
-        """ identifies patterns present in the provided columns and returns a list of tuples in the form (pattern, proportions)
+        Returns
+        -------
+        list[bool]
         """
-        column = self.series
+
+        if isinstance(values, str):
+            values = [values]
+
+        tokenizer = self._tokenizer
+        tokenized = tokenizer.encode(values)
+
+        predicate = list()
+        for row in tokenized:
+            evaluated = Evaluator.evaluate(pattern, row)
+            evaluated = evaluated if not negate else not evaluated
+            predicate.append(evaluated)
+
+        return predicate
+
+    def find(self, series: Union[Dict, List, pd.Series]):
+        """ identifies patterns present in the provided columns and returns a list of tuples in the form (pattern, proportions)
+
+        Parameters
+        ----------
+         series: list or dict or pd.Series
+            list of column values or dict of column values:frequency
+
+        Returns
+        -------
+            RowPattern(s)
+        """
+        column = self._sample(series=series, frac=self.frac, distinct=self.distinct)
         tokenizer = self._tokenizer
         aligner = self._aligner
         compiler = self._compiler
 
-        tokenized = tokenizer.encode(
-            column)  # encode is a two step method. it does both, the tokenization and the type resolution in the same go
+        # encode is a two step method. it does both, the tokenization and the type resolution in the same go
+        tokenized = tokenizer.encode(column)
         self._aligned = aligner.align(tokenized)
 
         self.regex = compiler.compile(tokenized, self._aligned)

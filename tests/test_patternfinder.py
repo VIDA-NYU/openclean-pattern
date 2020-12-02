@@ -14,13 +14,12 @@ import pytest
 
 def test_patternfinder_find(business):
     pf = PatternFinder(
-        series=business['Address '],
         tokenizer='default',
         aligner='group',
         compiler=DefaultRegexCompiler()
     )
 
-    patterns = pf.find()
+    patterns = pf.find(series=business['Address '])
     assert len(patterns) == 4
 
     types = ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
@@ -29,13 +28,12 @@ def test_patternfinder_find(business):
 
     # test column wise pattern creator
     pf = PatternFinder(
-        series=business['Address '],
         tokenizer='default',
         aligner='group',
         compiler=DefaultRegexCompiler(method='col')
     )
 
-    patterns = pf.find()
+    patterns = pf.find(series=business['Address '])
     assert len(patterns) == 4
 
     types = ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
