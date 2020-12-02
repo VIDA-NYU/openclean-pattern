@@ -13,6 +13,7 @@ from openclean_pattern.regex.compiler import DefaultRegexCompiler
 import pytest
 
 def test_patternfinder_find(business):
+    """test the patternfinder find method"""
     pf = PatternFinder(
         tokenizer='default',
         aligner='group',

@@ -16,10 +16,9 @@ from openclean_pattern.datatypes.base import SupportedDataTypes
 class Evaluator(object):
     """Class to contain different evaluation techniques / methods for patterns on new data"""
     @staticmethod
-    def evaluate(pattern, value):
-        """
-        Parses through each token and returns False if any Token value.regex_type doesn't
-        match the respective pattern.element_type
+    def compare(pattern, value):
+        """Uses the default Pattern class' compare method. i.e. Parses through each token and
+        returns False if any Token value.regex_type doesn't match the respective pattern.element_type
 
         Parameters
         ----------
@@ -39,21 +38,4 @@ class Evaluator(object):
         if not isinstance(pattern, Pattern):
             raise ValueError("Invalid Pattern")
 
-        value = [value] if not isinstance(value, tuple) else value
-
-        for p, v in zip(pattern, value):
-            if not isinstance(p, PatternElement):
-                raise ValueError("Invalid PatternElemenet")
-            elif not isinstance(v, Token):
-                raise ValueError("Invalid Token")
-
-            if p.element_type != v.regex_type.name:
-                if p.element_type == SupportedDataTypes.ALPHANUM and\
-                        (v.regex_type.name in [SupportedDataTypes.ALPHA, SupportedDataTypes.DIGIT]):
-                    continue
-                return False
-
-        if len(pattern) != len(value):
-            return False
-
-        return True
+        return pattern.compare(value)

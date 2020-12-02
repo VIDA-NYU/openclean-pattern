@@ -107,7 +107,7 @@ class PatternFinder(object):
 
         return WeightedRandomSampler(weights=series, n=frac, random_state=42).sample()
 
-    def evaluate(self, pattern: Pattern, values: Union[List[str], str], negate=False):
+    def compare(self, pattern: Pattern, values: Union[List[str], str], negate=False):
         """Get an instance of a value function that is predicate which can be
         used to test whether an given value is accepted by the pattern or not.
 
@@ -135,9 +135,9 @@ class PatternFinder(object):
 
         predicate = list()
         for row in tokenized:
-            evaluated = Evaluator.evaluate(pattern, row)
-            evaluated = evaluated if not negate else not evaluated
-            predicate.append(evaluated)
+            compared = Evaluator.compare(pattern, row)
+            compared = compared if not negate else not compared
+            predicate.append(compared)
 
         return predicate
 

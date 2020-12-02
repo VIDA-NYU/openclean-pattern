@@ -23,14 +23,14 @@ def test_evaluator_evaluate(business):
     patterns = pf.find(series=business['Address '])
     eval_pattern = patterns[7]
 
-    predicate = pf.evaluate(eval_pattern, business['Address '].tolist(), negate=True)
+    predicate = pf.compare(eval_pattern, business['Address '].tolist(), negate=True)
     mismatches = business.loc[predicate, 'Address ']
     mismatched_pattern = pf.find(mismatches)
 
     for mp in mismatched_pattern.values():
         assert not mp == eval_pattern
 
-    predicate = pf.evaluate(eval_pattern, business['Address '].tolist(), negate=False)
+    predicate = pf.compare(eval_pattern, business['Address '].tolist(), negate=False)
     matches = business.loc[predicate, 'Address ']
     matched_pattern = pf.find(matches)
 

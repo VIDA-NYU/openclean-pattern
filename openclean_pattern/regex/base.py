@@ -38,13 +38,14 @@ class Pattern(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    def evaluate(self, value):
+    @abstractmethod
+    def compare(self, value):
         """Evaluates the given value against the pattern and returns a boolean
 
         Parameters
         ----------
-        value: str
-            value to compare with the pattern
+        value: list[Tokens]
+            value / tokens to compare with the pattern
         """
         raise NotImplementedError()
 
@@ -81,6 +82,44 @@ class SingularRowPattern(Pattern):
 
         self.idx.add(r.rowidx)
         self.freq += 1
+
+    def compare(self, value):
+        """Parses through each token and returns False if any Token value.regex_type 
+        doesn't match the respective pattern.element_type
+
+        Parameters
+        ----------
+        pattern : Pattern
+            The pattern to evaluate against
+        value : list[Token]
+            The tokens of a single row to match with the pattern
+
+        Returns
+        -------
+            bool
+
+        Raises
+        ------
+            ValueError
+        """
+        value = [value] if not isinstance(value, tuple) else value
+
+        for p, v in zip(self, value):
+            if not isinstance(p, PatternElement):
+                raise ValueError("Invalid PatternElemenet")
+            elif not isinstance(v, Token):
+                raise ValueError("Invalid Token")
+
+            if p.element_type != v.regex_type.name:
+                if p.element_type == SupportedDataTypes.ALPHANUM and \
+                        (v.regex_type.name in [SupportedDataTypes.ALPHA, SupportedDataTypes.DIGIT]):
+                    continue
+                return False
+
+        if len(self) != len(value):
+            return False
+
+        return True
 
     def __eq__(self, other):
         for s, o in zip(self, other):
@@ -138,6 +177,16 @@ class SingularColumnPattern(Pattern):
                 top = c
                 max = top.freq
         return top
+
+    def compare(self, value):
+        """Evaluates the given value against the pattern and returns a boolean
+
+        Parameters
+        ----------
+        value: list[Tokens]
+            value / tokens to compare with the pattern
+        """
+        raise NotImplementedError()
 
 
 ### Pattern Dicts
