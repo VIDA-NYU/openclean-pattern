@@ -1,5 +1,5 @@
 ==========================================
-openclean-pattern - Pattern Identification
+openclean-pattern - OpencleanPattern Identification
 ==========================================
 
 .. image:: https://img.shields.io/badge/License-BSD-green.svg
@@ -39,7 +39,7 @@ Install **openclean-pattern** from the  `Python Package Index (PyPI) <https://py
 
 Usage
 =======
-The library comes with many predefined classes to support the pattern detection process. One could use the `PatternFinder <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/patternfinder.py#L29>`_ class or otherwise the general process should look similar to the following:
+The library comes with many predefined classes to support the pattern detection process. One could use the `OpencleanPatternFinder <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/opencleanpatternfinder.py#L29>`_ class or otherwise the general process should look similar to the following:
 
 #. Sample the column
     In case of very large dataset two Samplers have been added for the user's convenience to help extract the distribution of the column:
