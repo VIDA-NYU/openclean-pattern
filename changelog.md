@@ -1,4 +1,4 @@
-# openclean-pattern - Pattern Identification - Changelog
+# openclean-pattern - OpencleanPattern Identification - Changelog
 
 ### 0.0.1 - 2020-11-11
 

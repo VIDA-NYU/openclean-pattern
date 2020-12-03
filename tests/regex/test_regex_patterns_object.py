@@ -9,8 +9,13 @@
 
 
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
+from openclean_pattern.regex.base import SingularRowPattern, PatternElement
+from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.tokenize.regex import DefaultTokenizer
 from openclean_pattern.align.group import GroupAligner
+
+ROWS = [['32A West Broadway 10007'],
+        ['54E East Village 10003']]
 
 def test_patterns_object(business):
     compiler = DefaultRegexCompiler()
@@ -26,4 +31,56 @@ def test_patterns_object(business):
 
     anomalies = compiler.anomalies(tokenized, alignments)
     assert anomalies[7] == [0,8,3,12,14]
+
+
+def test_patterns_insert():
+    tokenizer = DefaultTokenizer()
+    tokenized = tokenizer.encode(ROWS)
+
+    pattern = SingularRowPattern()
+    [pattern.container.append(PatternElement(r)) for r in tokenized[0]]
+
+    assert pattern[0].element_type == SupportedDataTypes.ALPHANUM.name \
+        and pattern[0].partial_regex == '32a'
+    assert pattern[1].element_type == SupportedDataTypes.SPACE_REP.name \
+        and pattern[1].partial_regex == ' '
+    assert pattern[2].element_type == SupportedDataTypes.ALPHA.name \
+        and pattern[2].partial_regex == 'west'
+    assert pattern[3].element_type == SupportedDataTypes.SPACE_REP.name \
+        and pattern[3].partial_regex == ' '
+    assert pattern[4].element_type == SupportedDataTypes.ALPHA.name \
+        and pattern[4].partial_regex == 'broadway'
+    assert pattern[5].element_type == SupportedDataTypes.SPACE_REP.name \
+        and pattern[5].partial_regex == ' '
+    assert pattern[6].element_type == SupportedDataTypes.DIGIT.name \
+        and pattern[6].partial_regex == '10007'
+
+
+def test_patterns_update():
+    tokenizer = DefaultTokenizer()
+    tokenized = tokenizer.encode(ROWS)
+    pattern = SingularRowPattern()
+
+    for row in tokenized:
+        if len(pattern) == 0:
+            for r in row:
+                pattern.container.append(PatternElement(r))
+        else:
+            pattern.update(row)
+
+    assert pattern[0].element_type == SupportedDataTypes.ALPHANUM.name \
+                   and pattern[0].partial_regex == 'XXX'
+    assert pattern[1].element_type == SupportedDataTypes.SPACE_REP.name \
+                   and pattern[1].partial_regex == ' '
+    assert pattern[2].element_type == SupportedDataTypes.ALPHA.name \
+                   and pattern[2].partial_regex == 'XXst'
+    assert pattern[3].element_type == SupportedDataTypes.SPACE_REP.name \
+                   and pattern[3].partial_regex == ' '
+    assert pattern[4].element_type == SupportedDataTypes.ALPHA.name \
+                   and pattern[4].partial_regex == 'XXXXXXXX'
+    assert pattern[5].element_type == SupportedDataTypes.SPACE_REP.name \
+                   and pattern[5].partial_regex == ' '
+    assert pattern[6].element_type == SupportedDataTypes.DIGIT.name \
+                   and pattern[6].partial_regex == '1000X'
+
 

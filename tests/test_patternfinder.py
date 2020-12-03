@@ -5,16 +5,16 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""unit tests for the PatternFinder Class"""
+"""unit tests for the OpencleanPatternFinder Class"""
 
-from openclean_pattern.patternfinder import PatternFinder
+from openclean_pattern.opencleanpatternfinder import OpencleanPatternFinder
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 
 import pytest
 
 def test_patternfinder_find(business):
     """test the patternfinder find method"""
-    pf = PatternFinder(
+    pf = OpencleanPatternFinder(
         tokenizer='default',
         aligner='group',
         compiler=DefaultRegexCompiler()
@@ -28,7 +28,7 @@ def test_patternfinder_find(business):
         assert elements.element_type == type
 
     # test column wise pattern creator
-    pf = PatternFinder(
+    pf = OpencleanPatternFinder(
         tokenizer='default',
         aligner='group',
         compiler=DefaultRegexCompiler(method='col')

@@ -5,7 +5,7 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Pattern Finder class to identify regex patterns, find anomalies and evaluate patterns on new columns"""
+"""OpencleanPattern Finder class to identify regex patterns, find anomalies and evaluate patterns on new columns"""
 
 from openclean_pattern.tokenize.factory import TokenizerFactory
 from openclean_pattern.tokenize.regex import TOKENIZER_DEFAULT
@@ -19,17 +19,19 @@ from openclean_pattern.regex.compiler import DefaultRegexCompiler, RegexCompiler
 from openclean_pattern.evaluate.evaluator import Evaluator
 
 from openclean_pattern.utils.utils import WeightedRandomSampler, Distinct
-from openclean_pattern.regex.base import Pattern
+from openclean_pattern.regex.base import OpencleanPattern
 
 import pandas as pd
 
 from typing import Union, List, Dict
 from collections import Counter
+from openclean.profiling.pattern.base import PatternFinder
+from openclean.profiling.base import ProfilerResult
 
 
-class PatternFinder(object):
+class OpencleanPatternFinder(PatternFinder):
     """
-    PatternFinder class to identify patterns and anomalies
+    OpencleanPatternFinder class to identify patterns and anomalies
     """
 
     def __init__(self,
@@ -50,6 +52,7 @@ class PatternFinder(object):
         aligner: str (default: 'group')
             the aligner to use
         """
+        super(OpencleanPatternFinder, self).__init__()
         self.frac = frac
         self.distinct = distinct
         self._tokenizer = tokenizer if isinstance(tokenizer, Tokenizer) else TokenizerFactory.create_tokenizer(
@@ -59,6 +62,28 @@ class PatternFinder(object):
         self.regex = None
         self.outliers = dict()
         self._compiler = compiler if compiler is not None else DefaultRegexCompiler()
+
+    def process(self, values: Counter) -> ProfilerResult:
+        """Compute one or more features over a set of distinct values. This is
+        the main profiling function that computes statistics or informative
+        summaries over the given data values. It operates on a compact form of
+        a value list that only contains the distinct values and their frequency
+        counts.
+
+        The return type of this function is a dictionary. The elements and
+        structure in the dictionary are implementation dependent.
+
+        Parameters
+        ----------
+        values: collections.Counter
+            Set of distinct scalar values or tuples of scalar values that are
+            mapped to their respective frequency count.
+
+        Returns
+        -------
+        dict or list
+        """
+        return self.find(list(values.keys()))
 
     def _sample(self, series: Union[List, Dict, pd.Series], frac: float, distinct: bool):
         '''
@@ -107,7 +132,7 @@ class PatternFinder(object):
 
         return WeightedRandomSampler(weights=series, n=frac, random_state=42).sample()
 
-    def compare(self, pattern: Pattern, values: Union[List[str], str], negate=False):
+    def compare(self, pattern: OpencleanPattern, values: Union[List[str], str], negate=False):
         """Get an instance of a value function that is predicate which can be
         used to test whether an given value is accepted by the pattern or not.
 
@@ -129,17 +154,14 @@ class PatternFinder(object):
 
         if isinstance(values, str):
             values = [values]
-
-        tokenizer = self._tokenizer
-        tokenized = tokenizer.encode(values)
-
+        tokenized = self._parse(values)
         predicate = list()
         for row in tokenized:
-            compared = Evaluator.compare(pattern, row)
+            compared = Evaluator.compare(pattern, row, self)
             compared = compared if not negate else not compared
             predicate.append(compared)
 
-        return predicate
+        return predicate[0] if len(values) == 1 else predicate
 
     def find(self, series: Union[Dict, List, pd.Series]):
         """ identifies patterns present in the provided columns and returns a list of tuples in the form (pattern, proportions)
@@ -189,3 +211,9 @@ class PatternFinder(object):
 
         sorted_shares = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
         return sorted_shares[n][0]
+
+    def _parse(self, value):
+        """parses values to the internal 'Tokens' representation
+        """
+        tokenizer = self._tokenizer
+        return tokenizer.encode(value)
