@@ -25,6 +25,7 @@ import pandas as pd
 
 from typing import Union, List, Dict
 from collections import Counter
+
 from openclean.profiling.pattern.base import PatternFinder
 from openclean.profiling.base import ProfilerResult
 
