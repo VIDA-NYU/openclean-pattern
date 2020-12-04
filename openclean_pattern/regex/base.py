@@ -213,6 +213,9 @@ class SingularRowPattern(OpencleanPattern):
                 return False
         return len(self) == len(other)
 
+    def __hash__(self):
+        return hash(str(self))
+
 
 class SingularColumnPattern(OpencleanPattern):
     """Class to create / store a singular patterns created from a row"""
