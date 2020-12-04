@@ -177,6 +177,7 @@ class OpencleanPatternFinder(PatternFinder):
             RowPattern(s)
         """
         column = self._sample(series=series, frac=self.frac, distinct=self.distinct)
+        self.values = column
         tokenizer = self._tokenizer
         aligner = self._aligner
         compiler = self._compiler
@@ -199,7 +200,7 @@ class OpencleanPatternFinder(PatternFinder):
             the rank
         """
         if self.regex is None:
-            self.find()
+            raise RuntimeError("Find patterns first!")
 
         if n < 1:
             raise ValueError("rank should be greater than zero")
@@ -208,7 +209,7 @@ class OpencleanPatternFinder(PatternFinder):
 
         shares = dict()
         for key, pattern in self.regex.items():
-            shares[pattern] = pattern.freq / len(self.series)
+            shares[pattern] = pattern.freq / len(self.values)
 
         sorted_shares = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
         return sorted_shares[n][0]
