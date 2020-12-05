@@ -12,7 +12,7 @@ from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.regex.base import SingularRowPattern, PatternElement
 from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.tokenize.regex import DefaultTokenizer
-from openclean_pattern.align.group import GroupAligner
+from openclean_pattern.align.group import Group
 
 ROWS = [['32A West Broadway 10007'],
         ['54E East Village 10003']]
@@ -20,10 +20,10 @@ ROWS = [['32A West Broadway 10007'],
 def test_patterns_object(business):
     compiler = DefaultRegexCompiler()
     tokenizer = DefaultTokenizer()
-    aligner = GroupAligner()
+    collector = Group()
 
     tokenized = tokenizer.encode(business['Address '])
-    alignments = aligner.align(tokenized)
+    alignments = collector.collect(tokenized)
 
     patterns = compiler.compile(tokenized, alignments)
 

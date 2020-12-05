@@ -7,7 +7,7 @@
 
 """unit tests for Evaluator class"""
 
-from openclean_pattern.opencleanpatternfinder import OpencleanPatternFinder
+from openclean.profiling.pattern import OpencleanPatternFinder
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 
 
@@ -16,7 +16,7 @@ def test_evaluator_evaluate(business):
     """
     pf = OpencleanPatternFinder(
         tokenizer='default',
-        aligner='group',
+        collector='group',
         compiler=DefaultRegexCompiler()
     )
 

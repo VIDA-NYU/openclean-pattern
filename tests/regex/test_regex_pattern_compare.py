@@ -19,7 +19,7 @@ def test_regex_pattern_compare():
    """
     pf = OpencleanPatternFinder(
         tokenizer='default',
-        aligner='group',
+        collector='group',
         compiler=DefaultRegexCompiler()
     )
 
@@ -36,7 +36,7 @@ def test_regex_pattern_compile():
     """
     pf = OpencleanPatternFinder(
         tokenizer='default',
-        aligner='group',
+        collector='group',
         compiler=DefaultRegexCompiler()
     )
 

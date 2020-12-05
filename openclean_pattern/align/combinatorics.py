@@ -46,21 +46,20 @@ class CombAligner(Aligner):
         """
         super(CombAligner, self).__init__(ALIGN_COMB)
 
-    def align(self, column):
-        """the align method takes in a list of openclean_pattern.tokenize.token.Tokens and aligns them to minimize
-        the distance between that row and the others. The returned object is a dict of lists with each inner list
-         representing a group having the same no. of tokens / same cluster
+    def align(self, column, groups):
+        """Takes in the column and the groups and returns an aligned version of each group by adding Gap tokens to each row.
+        A list[Tuple(Tokens)] is returned with the aligned values
 
         Parameters
         ----------
-        column: list[openclean_pattern.tokenize.token.Token]
-            the column to align
-
+        column: list[Tuple(Tokens)]
+            The column to align
+        groups: dict
+            The dict of groups with group id as key and row indices as values
         Returns
         -------
-               a dict of lists with key 'n' representing the length and each inner list representing row_indices of groups
-             with n tokens / row_index of part of the cluster
-     """
+            list[Tuple(Tokens)]
+        """
         raise NotImplementedError()
 
 # class CombAligner(Aligner):

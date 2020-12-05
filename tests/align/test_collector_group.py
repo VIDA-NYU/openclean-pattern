@@ -8,7 +8,7 @@
 """unit tests for GroupAlign class"""
 
 import pytest
-from openclean_pattern.align.group import GroupAligner
+from openclean_pattern.align.group import Group
 from openclean_pattern.tokenize.regex import DefaultTokenizer
 
 
@@ -17,8 +17,8 @@ def test_group_align(business):
     dt = DefaultTokenizer()
     encoded = dt.encode(business['Address '])
 
-    ga = GroupAligner()
-    aligned = ga.align(encoded)
+    ga = Group()
+    aligned = ga.collect(encoded)
 
     assert list(aligned.keys()) == [7,9,11,5]
     assert len(aligned[7]) == 13

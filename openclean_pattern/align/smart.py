@@ -23,7 +23,7 @@ class MSCAligner(Aligner):
         """
         super(MSCAligner, self).__init__(ALIGN_MSC)
 
-    def align(self, column):
+    def align(self, column, groups):
         """ Looks at most frequent tokens at each position in the column, gets the minimum set coverage, and aligns
          everything according to it
 
@@ -44,12 +44,12 @@ class MSCAligner(Aligner):
 
         Parameters
         ----------
-        column: list of list[openclean_pattern.tokenize.token.Token]
-            the column to align
-
+        column: list[Tuple(Tokens)]
+            The column to align
+        groups: dict
+            The dict of groups with group id as key and row indices as values
         Returns
         -------
-             a dict of lists with key 'n' representing the cluster and each inner list representing row_indices of groups
-             that are part of the cluster
-       """
+            list[Tuple(Tokens)]
+        """
         raise NotImplementedError()

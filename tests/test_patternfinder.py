@@ -7,7 +7,7 @@
 
 """unit tests for the OpencleanPatternFinder Class"""
 
-from openclean_pattern.opencleanpatternfinder import OpencleanPatternFinder
+from openclean.profiling.pattern import OpencleanPatternFinder
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 
 import pytest
@@ -16,7 +16,7 @@ def test_patternfinder_find(business):
     """test the patternfinder find method"""
     pf = OpencleanPatternFinder(
         tokenizer='default',
-        aligner='group',
+        aligner='pad',
         compiler=DefaultRegexCompiler()
     )
 
@@ -30,7 +30,7 @@ def test_patternfinder_find(business):
     # test column wise pattern creator
     pf = OpencleanPatternFinder(
         tokenizer='default',
-        aligner='group',
+        aligner='pad',
         compiler=DefaultRegexCompiler(method='col')
     )
 

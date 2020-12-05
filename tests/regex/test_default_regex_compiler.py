@@ -9,18 +9,18 @@
 
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.tokenize.regex import DefaultTokenizer
-from openclean_pattern.align.group import GroupAligner
+from openclean_pattern.align.group import Group
 
 
 def test_default_regex_compiler(business):
     compiler = DefaultRegexCompiler()
     tokenizer = DefaultTokenizer()
-    aligner = GroupAligner()
+    collector = Group()
 
     tokenized = tokenizer.encode(business['Address '])
-    alignments = aligner.align(tokenized)
+    groups = collector.collect(tokenized)
 
-    patterns = compiler.compile(tokenized, alignments)
+    patterns = compiler.compile(tokenized, groups)
 
     assert len(patterns) == 4
     types = [['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA'],
@@ -34,13 +34,13 @@ def test_default_regex_compiler(business):
 def test_default_regex_anomaly(business):
     compiler = DefaultRegexCompiler()
     tokenizer = DefaultTokenizer()
-    aligner = GroupAligner()
+    collector = Group()
 
     tokenized = tokenizer.encode(business['Address '])
-    alignments = aligner.align(tokenized)
+    groups = collector.collect(tokenized)
 
-    pattern = compiler.compile(tokenized, alignments)
-    anomalies = compiler.anomalies(tokenized, alignments)
+    pattern = compiler.compile(tokenized, groups)
+    anomalies = compiler.anomalies(tokenized, groups)
 
     types = [['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA'],
              ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA'],

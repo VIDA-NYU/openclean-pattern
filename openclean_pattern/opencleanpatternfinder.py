@@ -11,9 +11,10 @@ from openclean_pattern.tokenize.factory import TokenizerFactory
 from openclean_pattern.tokenize.regex import TOKENIZER_DEFAULT
 from openclean_pattern.tokenize.base import Tokenizer
 
-from openclean_pattern.align.factory import AlignerFactory
-from openclean_pattern.align.group import ALIGN_GROUP
-from openclean_pattern.align.base import Aligner
+from openclean_pattern.align.factory import AlignerFactory, CollectorFactory
+from openclean_pattern.align.group import COLLECT_GROUP
+from openclean_pattern.align.pad import ALIGN_PAD
+from openclean_pattern.align.base import Aligner, Collector
 
 from openclean_pattern.regex.compiler import DefaultRegexCompiler, RegexCompiler
 from openclean_pattern.evaluate.evaluator import Evaluator
@@ -39,25 +40,34 @@ class OpencleanPatternFinder(PatternFinder):
                  frac: float = 1,
                  distinct: bool = True,
                  tokenizer: Union[str, Tokenizer] = TOKENIZER_DEFAULT,
-                 aligner: Union[str, Aligner] = ALIGN_GROUP,
+                 collector: Union[str, Collector] = COLLECT_GROUP,
+                 aligner: Union[str, Aligner] = ALIGN_PAD,
                  compiler: RegexCompiler = None) -> None:
         """
         Initialize the pattern finder class. This assumes that the input columns have been sampled if too large
 
         Parameters
         ----------
-        frac: float
+        frac: float (default = 1)
             sample size
+        distinct: bool (default = True)
+            set to true to only use distinct patterns to computer patterns
         tokenizer: str or object of class Tokenizer (default: 'default')
             the tokenizer to use
-        aligner: str (default: 'group')
+        collector: str or Collector (default: 'group')
+            aggregates tokens into similar groups
+        aligner: str (default: 'pad')
             the aligner to use
+        compiler: RegexCompiler
+            compiles the aligned tokens into Pattern objects
         """
         super(OpencleanPatternFinder, self).__init__()
         self.frac = frac
         self.distinct = distinct
         self._tokenizer = tokenizer if isinstance(tokenizer, Tokenizer) else TokenizerFactory.create_tokenizer(
             tokenizer)
+        self._collector = collector if isinstance(collector, Collector) else CollectorFactory.create_collector(
+            collector)
         self._aligner = aligner if isinstance(aligner, Aligner) else AlignerFactory.create_aligner(aligner)
         self._aligned = None
         self.regex = None
@@ -179,15 +189,17 @@ class OpencleanPatternFinder(PatternFinder):
         column = self._sample(series=series, frac=self.frac, distinct=self.distinct)
         self.values = column
         tokenizer = self._tokenizer
+        collector = self._collector
         aligner = self._aligner
         compiler = self._compiler
 
         # encode is a two step method. it does both, the tokenization and the type resolution in the same go
         tokenized = tokenizer.encode(column)
-        self._aligned = aligner.align(tokenized)
+        groups = collector.collect(tokenized)
+        self._aligned = aligner.align(tokenized, groups)
 
-        self.regex = compiler.compile(tokenized, self._aligned)
-        self.outliers = compiler.anomalies(tokenized, self._aligned)
+        self.regex = compiler.compile(self._aligned, groups)
+        self.outliers = compiler.anomalies(self._aligned, groups)
 
         return self.regex
 
