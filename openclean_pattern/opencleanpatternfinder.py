@@ -16,7 +16,8 @@ from openclean_pattern.align.group import COLLECT_GROUP
 from openclean_pattern.align.pad import ALIGN_PAD
 from openclean_pattern.align.base import Aligner, Collector
 
-from openclean_pattern.regex.compiler import DefaultRegexCompiler, RegexCompiler
+from openclean_pattern.regex.compiler import RegexCompiler, COMPILER_DEFAULT
+from openclean_pattern.regex.factory import CompilerFactory
 from openclean_pattern.evaluate.evaluator import Evaluator
 
 from openclean_pattern.utils.utils import WeightedRandomSampler, Distinct
@@ -42,7 +43,7 @@ class OpencleanPatternFinder(PatternFinder):
                  tokenizer: Union[str, Tokenizer] = TOKENIZER_DEFAULT,
                  collector: Union[str, Collector] = COLLECT_GROUP,
                  aligner: Union[str, Aligner] = ALIGN_PAD,
-                 compiler: RegexCompiler = None) -> None:
+                 compiler: Union[str, RegexCompiler] = COMPILER_DEFAULT) -> None:
         """
         Initialize the pattern finder class. This assumes that the input columns have been sampled if too large
 
@@ -72,7 +73,7 @@ class OpencleanPatternFinder(PatternFinder):
         self._aligned = None
         self.regex = None
         self.outliers = dict()
-        self._compiler = compiler if compiler is not None else DefaultRegexCompiler()
+        self._compiler = compiler if isinstance(compiler, RegexCompiler) else CompilerFactory.create_compiler(compiler)
 
     def process(self, values: Counter) -> ProfilerResult:
         """Compute one or more features over a set of distinct values. This is

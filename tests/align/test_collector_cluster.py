@@ -11,7 +11,7 @@ from openclean_pattern.align.cluster import Cluster
 from openclean_pattern.tokenize.factory import DefaultTokenizer
 
 
-def test_distance_absolute_compute(business):
+def test_distance_ted_compute(business):
     rows = DefaultTokenizer().encode(business['Address '])
 
     aligned = Cluster(dist='TED', min_samples=3).collect(rows)
@@ -24,3 +24,17 @@ def test_distance_absolute_compute(business):
 
     for i in business.loc[aligned[0], 'Address ']:
         assert i in results
+
+
+def test_distance_absolute_compute(business):
+    rows = DefaultTokenizer().encode(business['Address '])
+    groups = Cluster(dist='ABS', min_samples=3).collect(rows)
+
+    for group, idx in groups.items():
+        # noise
+        if group != -1:
+            # all other rows should be grouped by no. of tokens
+            leng = len(rows[idx[0]])
+            for id in idx:
+                assert len(rows[id]) == leng
+

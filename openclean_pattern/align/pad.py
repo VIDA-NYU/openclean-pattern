@@ -38,13 +38,12 @@ class Padder(Aligner):
         -------
             list[Tuple(Tokens)]
         """
-        aligned = list()
+        aligned = [None] * len(column)
         for cluster, idx in groups.items():
             #  pad the smaller ones with gap characters
             col = list()
             size = 0
             for id in idx:
-
                 if not isinstance(id, int):
                     raise KeyError("row indices should be int. found: ".format(id))
 
@@ -52,11 +51,12 @@ class Padder(Aligner):
                     size = len(column[id])
                 col.append(column[id])
 
-            for c in col:
-                while len(c) < size:
-                    c = (*c, TypeResolver.gap(rowidx=idx))
-
             for c, id in zip(col, idx):
-                aligned.insert(id, c)
+                while len(c) < size:
+                    c = (*c, TypeResolver.gap(rowidx=id))
+
+                if aligned[id] is not None:
+                    raise KeyError("found duplicate aligned tokens({new} and {old}) for same row id: {id}".format(id=id, new=c, old=aligned[id]))
+                aligned[id] = c
 
         return aligned

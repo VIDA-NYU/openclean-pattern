@@ -84,6 +84,8 @@ class RegexCompiler(metaclass=ABCMeta):
         return anomalies
 
 
+COMPILER_DEFAULT = 'default'
+
 class DefaultRegexCompiler(RegexCompiler):
     """Compiles the full Regexp using PatternColumns with the top shares"""
     def __init__(self, method='row'):

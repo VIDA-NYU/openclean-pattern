@@ -190,6 +190,8 @@ class SingularRowPattern(OpencleanPattern):
                 if p.element_type == SupportedDataTypes.ALPHANUM and \
                         (v.regex_type.name in [SupportedDataTypes.ALPHA, SupportedDataTypes.DIGIT]):
                     continue
+                elif p.element_type == SupportedDataTypes.GAP and v.regex_type.name == SupportedDataTypes.GAP:
+                    continue
                 return False
 
         if len(self) != len(value):
@@ -417,7 +419,7 @@ class RowPatterns(Patterns):
 
         Parameters
         ----------
-        row : list of Tokens
+        row : tuple of Tokens
         """
 
         self.global_freq += 1
