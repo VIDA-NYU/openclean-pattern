@@ -1,6 +1,6 @@
-==========================================
-openclean-pattern - OpencleanPattern Identification
-==========================================
+====================================================
+openclean-pattern - Openclean Pattern Identification
+====================================================
 
 .. image:: https://img.shields.io/badge/License-BSD-green.svg
     :target: https://github.com/maqzi/openclean/blob/master/LICENSE
@@ -8,7 +8,8 @@ openclean-pattern - OpencleanPattern Identification
 
 About
 =====
-This package identifies regex patterns in data with the option of sequence aligning input values first. It supports the following data types:
+This package identifies patterns and creates Openclean Patterns from data. It is part of the openclean-core library to create profiled results as well as to detect anomalies.
+Currently, Openclean Patterns support the following data types, but are fairly extensible to any other basic / nonbasic implementations:
 
 - Basic
     - String
@@ -45,7 +46,7 @@ The library comes with many predefined classes to support the pattern detection 
     In case of very large dataset two Samplers have been added for the user's convenience to help extract the distribution of the column:
      - `RandomSampler <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/utils/utils.py#L236>`_: considers each item in the iterable equally probable to get selected
      - `WeightedRandomSampler <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/utils/utils.py#L161>`_: takes a Counter of type {value:frequency} and creates a sample using the Counter distribution.
-    - `Distinct <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/utils/utils.py#L161>`_:: selects only distinct rows
+     - `Distinct <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/utils/utils.py#L161>`_: selects only distinct rows
 
 #. Tokenize it to remove punctutation
     At this point TypeResolvers can also be injected to tokenize and encode in the same run instead of running it as a separate step 3:
@@ -56,20 +57,21 @@ The library comes with many predefined classes to support the pattern detection 
     This stage converts the tokens to their `Basic and Non-Basic representations <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/datatypes/base.py#L13>`_:
      - `BasicTypeResolver <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/datatypes/resolver.py#L117>`_: converts the row into the above mentioned BasicTypes.
      - `AdvancedTypeResolver <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/datatypes/resolver.py#L172>`_: has numerous implementations and can be easily extended to add new AdvancedTypeResolver classes.
-      - DateResolver
-      - BusinessEntityResolver
-      - AddressDesignatorResolver
-      - GeoSpatialResolver
+        - DateResolver
+        - BusinessEntityResolver
+        - AddressDesignatorResolver
+        - GeoSpatialResolver
      - `DefaultTypeResolver <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/datatypes/resolver.py#L72>`_: does both Basic and Non-Basic type resolution by letting a user add Non-Basic interceptors before the Basic type resolution operation.
 
-#. Align or group
-    Group tokenized rows with similar lengths or perform a multiple seqeunce alignment to align all rows:
-     - `GroupAlign <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/align/group.py#L17>`_
+#. Collect and/or Align
+    Create groups of similar rows and align them:
+     - `Cluster <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/align/cluster.py#L21>`_: Collect similar tokenized rows by either clustering them using DBSCAN choosing a precomputed `distance <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/align/distance/base.py#L13>`_.
+     - `Group <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/align/group.py#L17>`_: Grouping tokenized rows with similar lengths
      - `CombAlign <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/align/combinatorics.py#L31>`_ [#]_: looks at all the possible combinations of each token in each row with other all other rows, calculates the distance, clusters the closest alignments together using DBSCAN and returns the clustered groups.
 
 #. Compile a pattern
-    Generate a regex pattern from the aligned groups
-     - `DefaultRegexCompiler <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/regex/base.py#L14>`_ : Analyzes each token position and the different datatypes that appear at that position iterating through each row . Then selects the majority type as the pattern at that position. Combining positional regex's compiles a full expression for the column.
+    Generate a regex pattern from the aligned groups:
+     - `DefaultRegexCompiler <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/openclean_pattern/regex/base.py#L14>`_ : Analyzes each token position and the different datatypes that appear at that position iterating through each row. Then selects the majority type as the pattern at that position. Combining positional regex's compiles a full expression for the column.
         - ``method=col``: Compiles the pattern based on the positions of different tokens at in each row. It flags values that don't match the specific position's majority types as anomalies.
         - ``method=row``: Compiles the pattern using each full row as a possible pattern.
 
@@ -78,14 +80,13 @@ The library comes with many predefined classes to support the pattern detection 
 
 Upcoming Modules
 ================
-- ability to evaluate a regex on other columns
 - serializer / deserializer
 - multiple sequence alignment
 
 
 Examples
 ========
-We include several example notebooks in this repository that demonstrate possible use cases for **openclean-pattern**.
+We include several `notebooks <https://github.com/maqzi/openclean/blob/9c6d938c19f076435efaae4d705ec92a8f1f00bd/examples/>`_ in this repository that demonstrate **openclean-pattern**'s usage.
 
 
 See also:
