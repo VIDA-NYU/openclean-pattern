@@ -71,7 +71,7 @@ class OpencleanPatternFinder(PatternFinder):
             collector)
         self._aligner = aligner if isinstance(aligner, Aligner) else AlignerFactory.create_aligner(aligner)
         self._aligned = None
-        self.regex = None
+        self.patterns = None
         self.outliers = dict()
         self._compiler = compiler if isinstance(compiler, RegexCompiler) else CompilerFactory.create_compiler(compiler)
 
@@ -199,10 +199,10 @@ class OpencleanPatternFinder(PatternFinder):
         groups = collector.collect(tokenized)
         self._aligned = aligner.align(tokenized, groups)
 
-        self.regex = compiler.compile(self._aligned, groups)
+        self.patterns = compiler.compile(self._aligned, groups)
         self.outliers = compiler.anomalies(self._aligned, groups)
 
-        return self.regex
+        return self.patterns
 
     def top(self, n=1):
         """ get the nth top pattern
@@ -212,7 +212,7 @@ class OpencleanPatternFinder(PatternFinder):
         n: int
             the rank
         """
-        if self.regex is None:
+        if self.patterns is None:
             raise RuntimeError("Find patterns first!")
 
         if n < 1:
@@ -221,7 +221,7 @@ class OpencleanPatternFinder(PatternFinder):
         n -= 1  # change rank to index
 
         shares = dict()
-        for key, pattern in self.regex.items():
+        for key, pattern in self.patterns.items():
             shares[pattern] = pattern.freq / len(self.values)
 
         sorted_shares = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)

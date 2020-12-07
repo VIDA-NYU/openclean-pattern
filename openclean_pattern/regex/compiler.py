@@ -15,6 +15,17 @@ class RegexCompiler(metaclass=ABCMeta):
     """the RegexCompiler class accepts columns grouped by rowidxs on some merit and evaluates
     the best type for each token index per row which can then be serialized into a RegexPattern
      """
+    def __init__(self, per_group='top'):
+        """Initializes the class
+
+        Parameters
+        ----------
+        per_group: str
+            selects between whether all group patterns should be returned or just the top one
+        """
+        if per_group not in ['all','top']:
+            raise ValueError("group aggregation: {} not found".format(per_group))
+        self.per_group = per_group
 
     @abstractmethod
     def compile_each(self, group):
@@ -27,7 +38,7 @@ class RegexCompiler(metaclass=ABCMeta):
 
         Returns
         -------
-            list of PatternColumnElement
+            PatternRows
         """
         raise NotImplementedError()
 
@@ -47,14 +58,14 @@ class RegexCompiler(metaclass=ABCMeta):
 
         Parameters
         ----------
-        tokenized_column : List[List[openclean_pattern.tokenize.token.Tokens]]
+        tokenized_column : List[Tuple[openclean_pattern.tokenize.token.Tokens]]
             tokenized rows
         groups : Dict[int:List]
             the dict with group label/cluster/size : list of rowidxs
 
         Returns
         -------
-            Dict of groups: PatternTokens
+            Dict of format => groups: PatternRows
         """
         # todo: report card
         patterns = dict()
@@ -68,7 +79,7 @@ class RegexCompiler(metaclass=ABCMeta):
 
         Parameters
         ----------
-        tokenized_column : List[List[openclean_pattern.tokenize.token.Tokens]]
+        tokenized_column : List[Tuple[openclean_pattern.tokenize.token.Tokens]]
             tokenized rows
         groups : Dict[int:List]
             the dict with group label/cluster/size : list of rowidxs
@@ -88,7 +99,18 @@ COMPILER_DEFAULT = 'default'
 
 class DefaultRegexCompiler(RegexCompiler):
     """Compiles the full Regexp using PatternColumns with the top shares"""
-    def __init__(self, method='row'):
+    def __init__(self, method='row', per_group='top'):
+        """Initializes the class
+
+        Parameters
+        ----------
+        method: str
+            chooses between row-wise and column-wise aggregations for the compiler
+        per_group: str
+            selects between whether all group patterns should be returned or just the top one
+        """
+        super(DefaultRegexCompiler, self).__init__(per_group=per_group)
+
         if method not in ['row', 'col']:
             raise NotImplementedError("{} not found".format(method))
         self.method = method
@@ -103,7 +125,7 @@ class DefaultRegexCompiler(RegexCompiler):
 
         Returns
         -------
-            list of PatternColumnElement
+            PatternRows
         """
         patterns = self.pattern_generator()
         for row in group:
@@ -113,8 +135,13 @@ class DefaultRegexCompiler(RegexCompiler):
         # converts the format
         condensed = patterns.condense()
 
-        top_pattern = condensed.top()
-        return condensed[top_pattern]
+        if self.per_group == 'top':
+            top_pattern = condensed.top()
+            keys = list(condensed.keys())
+            for pattern in keys:
+                if pattern != top_pattern:
+                    del condensed[pattern]
+        return condensed
 
     def anomalies_each(self, group):
         """Retrieves the row idxs for rows that didn't match the majority pooled pattern

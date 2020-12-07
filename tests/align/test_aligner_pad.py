@@ -11,10 +11,10 @@
 from openclean_pattern.align.pad import Padder
 from openclean_pattern.align.cluster import Cluster
 from openclean_pattern.tokenize.factory import DefaultTokenizer, RegexTokenizer
-from openclean_pattern.datatypes.resolver import AddressDesignatorResolver, GeoSpatialResolver, DefaultTypeResolver
+from openclean_pattern.datatypes.resolver import AddressDesignatorResolver, DefaultTypeResolver
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 
-from openclean.profiling.pattern import OpencleanPatternFinder
+from openclean_pattern.opencleanpatternfinder import OpencleanPatternFinder
 
 
 def test_padder_align(business):
@@ -51,8 +51,8 @@ def test_padder_regex_col_compile(business):
 
     for k, pat in patterns.items():
         if k != -1: #ignore noise group for dbscan
-            for value in business.loc[patterns[k].idx, 'Address ']:
-                assert pat.compare(value, pf)
+            for value in business.loc[pat.top(pattern=True).idx, 'Address ']:
+                assert pat.top(pattern=True).compare(value, pf)
 
 
 def test_padder_regex_row_compile(business):
@@ -77,8 +77,8 @@ def test_padder_regex_row_compile(business):
 
     for k, pat in patterns.items():
         if k != -1: #ignore noise group for dbscan
-            for value in business.loc[patterns[k].idx, 'Address ']:
-                assert pat.compare(value, pf)
+            for value in business.loc[patterns[k].top(pattern=True).idx, 'Address ']:
+                assert pat.top(pattern=True).compare(value, pf)
 
 
 def test_padder_regex_typeresolver_col_compile(business):
@@ -104,8 +104,8 @@ def test_padder_regex_typeresolver_col_compile(business):
 
     for k, pat in patterns.items():
         if k != -1: #ignore noise group for dbscan
-            for value in business.loc[patterns[k].idx, 'Address ']:
-                assert pat.compare(value, pf)
+            for value in business.loc[patterns[k].top(pattern=True).idx, 'Address ']:
+                assert pat.top(pattern=True).compare(value, pf)
 
 
 def test_padder_regex_typeresolver_row_compile(business):
@@ -131,5 +131,5 @@ def test_padder_regex_typeresolver_row_compile(business):
 
     for k, pat in patterns.items():
         if k != -1: #ignore noise group for dbscan
-            for value in business.loc[patterns[k].idx, 'Address ']:
-                assert pat.compare(value, pf)
+            for value in business.loc[patterns[k].top(pattern=True).idx, 'Address ']:
+                assert pat.top(pattern=True).compare(value, pf)

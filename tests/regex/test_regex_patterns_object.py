@@ -27,7 +27,9 @@ def test_patterns_object(business):
 
     patterns = compiler.compile(tokenized, alignments)
 
-    assert patterns[7].idx == {1,4,6,7,10,11,13,15}
+    assert len(patterns[7]) == 1
+    for k, pat in patterns[7].items():
+        assert pat.idx == {1,4,6,7,10,11,13,15}
 
     anomalies = compiler.anomalies(tokenized, alignments)
     assert anomalies[7] == [0,8,3,12,14]

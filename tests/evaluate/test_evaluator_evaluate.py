@@ -7,7 +7,7 @@
 
 """unit tests for Evaluator class"""
 
-from openclean.profiling.pattern import OpencleanPatternFinder
+from openclean_pattern.opencleanpatternfinder import OpencleanPatternFinder
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 
 
@@ -21,7 +21,7 @@ def test_evaluator_evaluate(business):
     )
 
     patterns = pf.find(series=business['Address '])
-    eval_pattern = patterns[7]
+    eval_pattern = patterns[7].top(pattern=True)
 
     predicate = pf.compare(eval_pattern, business['Address '].tolist(), negate=True)
     mismatches = business.loc[predicate, 'Address ']
@@ -35,4 +35,4 @@ def test_evaluator_evaluate(business):
     matched_pattern = pf.find(matches)
 
     assert len(matched_pattern) == 1
-    assert matched_pattern[7] == eval_pattern
+    assert matched_pattern[7].top(pattern=True) == eval_pattern

@@ -65,7 +65,11 @@ class OpencleanPattern(Pattern, metaclass=ABCMeta):
         -------
         dict
         """
-        return self.container
+        this = dict()
+        for v, i in vars(self).items():
+            if v != 'container':
+                this[v] = i
+        return this
 
     def pattern(self):
         """Get a string representation of the pattern for display purposes.
@@ -85,7 +89,10 @@ class OpencleanPattern(Pattern, metaclass=ABCMeta):
         -------
         dict
         """
-        pass
+        this = dict()
+        for v, i in vars(self).items():
+            this[v] = i
+        return this
 
     @abstractmethod
     def update(self, tokens):
@@ -305,7 +312,7 @@ class Patterns(defaultdict, metaclass=ABCMeta):
         """converts the row types into the key for the Patterns class"""
         key = ''
         for r in row:
-            key += '|' + str(r)
+            key += ' ' + str(r)
         return key.strip()
 
     @abstractmethod
@@ -335,14 +342,15 @@ class Patterns(defaultdict, metaclass=ABCMeta):
             shares[p] = self[p].freq / self.global_freq
         return shares
 
-    def top(self, n=1):
+    def top(self, n=1, pattern=False):
         """gets the element type with the n ranked share. Ensure this is computed on the Patterns.condensed() object
 
         Parameters
         ----------
         n: int
             ranking
-
+        pattern: bool
+            returns either the string represetation or the Pattern Object
         Returns
         -------
             str / int
@@ -354,7 +362,7 @@ class Patterns(defaultdict, metaclass=ABCMeta):
 
         shares = self.stats()
         sorted_shares = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
-        return sorted_shares[n][0]
+        return sorted_shares[n][0] if not pattern else self[sorted_shares[n][0]]
 
     def anomalies(self, n=1):
         """gets the indices of rows that didnt match the nth pattern. Ensure this is computed on the
@@ -445,6 +453,18 @@ class RowPatterns(Patterns):
             RowPatterns
         """
         return self
+
+    def distribution(self):
+        """returns each pattern and it's frequency
+
+        Returns
+        -------
+            dict
+        """
+        freqs = defaultdict(float)
+        for p in self:
+            freqs[p] = self[p].freq
+        return freqs
 
 
 class ColumnPatterns(Patterns):
@@ -628,14 +648,14 @@ class PatternElement(object):
         -------
             str
         """
-        if self.element_type == SupportedDataTypes.PUNCTUATION.name:
+        if self.element_type in [SupportedDataTypes.PUNCTUATION.name, SupportedDataTypes.SPACE_REP.name]:
             return '{}({})'.format(self.regex, ''.join(self.punc_list))
 
         pattern = self.regex if self.partial_ambiguous else self.partial_regex
         return '{}({}-{})'.format(pattern, self.len_min, self.len_max)
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.element_type)
+        return '{}({}-{})'.format(self.element_type, self.len_min, self.len_max)
 
     def __eq__(self, other):
         return self.element_type == other.element_type and \

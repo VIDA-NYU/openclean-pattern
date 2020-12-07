@@ -7,7 +7,7 @@
 
 """unit tests for the OpencleanPatternFinder Class"""
 
-from openclean.profiling.pattern import OpencleanPatternFinder
+from openclean_pattern.opencleanpatternfinder import OpencleanPatternFinder
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 
 import pytest
@@ -24,8 +24,10 @@ def test_patternfinder_find(business):
     assert len(patterns) == 4
 
     types = ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
-    for elements, type in zip(patterns[9].container, types):
-        assert elements.element_type == type
+    assert len(patterns[9]) == 1
+    for k, pat in patterns[9].items():
+        for elements, type in zip(pat.container, types):
+            assert elements.element_type == type
 
     # test column wise pattern creator
     pf = OpencleanPatternFinder(
@@ -38,5 +40,7 @@ def test_patternfinder_find(business):
     assert len(patterns) == 4
 
     types = ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
-    for elements, type in zip(patterns[9].container, types):
-        assert elements.element_type == type
+    assert len(patterns[9]) == 1
+    for k, pat in patterns[9].items():
+        for elements, type in zip(pat.container, types):
+            assert elements.element_type == type
