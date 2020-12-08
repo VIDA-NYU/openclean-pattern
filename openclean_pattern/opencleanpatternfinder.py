@@ -5,7 +5,7 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""OpencleanPattern Finder class to identify regex patterns, find anomalies and evaluate patterns on new columns"""
+"""OpencleanPattern Finder class to identify regex patterns, find mismatches and evaluate patterns on new columns"""
 
 from openclean_pattern.tokenize.factory import TokenizerFactory
 from openclean_pattern.tokenize.regex import TOKENIZER_DEFAULT
@@ -34,7 +34,7 @@ from openclean.profiling.base import ProfilerResult
 
 class OpencleanPatternFinder(PatternFinder):
     """
-    OpencleanPatternFinder class to identify patterns and anomalies
+    OpencleanPatternFinder class to identify patterns and mismatches
     """
 
     def __init__(self,
@@ -108,7 +108,7 @@ class OpencleanPatternFinder(PatternFinder):
         param frac:  int
             distance to use for clustering
         distinct: bool (default: True)
-            if only distinct values should be used to generate patterns and anomalies
+            if only distinct values should be used to generate patterns and mismatches
 
         Returns
         -------
@@ -200,32 +200,16 @@ class OpencleanPatternFinder(PatternFinder):
         self._aligned = aligner.align(tokenized, groups)
 
         self.patterns = compiler.compile(self._aligned, groups)
-        self.outliers = compiler.anomalies(self._aligned, groups)
+
+        # by default, the top pattern in each group is considered non anomalous
+        mismatches = list()
+        for pattern in self.patterns.values():
+            mismatches.append(pattern.top(pattern=True))
+
+        self.outliers = compiler.mismatches(self._aligned, mismatches)
 
         return self.patterns
 
-    def top(self, n=1):
-        """ get the nth top pattern
-
-        Parameters
-        ----------
-        n: int
-            the rank
-        """
-        if self.patterns is None:
-            raise RuntimeError("Find patterns first!")
-
-        if n < 1:
-            raise ValueError("rank should be greater than zero")
-
-        n -= 1  # change rank to index
-
-        shares = dict()
-        for key, pattern in self.patterns.items():
-            shares[pattern] = pattern.freq / len(self.values)
-
-        sorted_shares = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
-        return sorted_shares[n][0]
 
     def _parse(self, value):
         """parses values to the internal 'Tokens' representation

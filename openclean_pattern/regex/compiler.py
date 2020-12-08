@@ -9,12 +9,14 @@
 
 from abc import ABCMeta, abstractmethod
 from openclean_pattern.regex.base import ColumnPatterns, RowPatterns
+import numpy as np
 
 
 class RegexCompiler(metaclass=ABCMeta):
     """the RegexCompiler class accepts columns grouped by rowidxs on some merit and evaluates
     the best type for each token index per row which can then be serialized into a RegexPattern
      """
+
     def __init__(self, per_group='top'):
         """Initializes the class
 
@@ -23,7 +25,7 @@ class RegexCompiler(metaclass=ABCMeta):
         per_group: str
             selects between whether all group patterns should be returned or just the top one
         """
-        if per_group not in ['all','top']:
+        if per_group not in ['all', 'top']:
             raise ValueError("group aggregation: {} not found".format(per_group))
         self.per_group = per_group
 
@@ -39,16 +41,6 @@ class RegexCompiler(metaclass=ABCMeta):
         Returns
         -------
             PatternRows
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def anomalies_each(self, group):
-        """Retrieves the row idxs for rows that didn't match the majority pooled pattern
-
-        Returns
-        -------
-            set
         """
         raise NotImplementedError()
 
@@ -74,31 +66,45 @@ class RegexCompiler(metaclass=ABCMeta):
             patterns[gr] = self.compile_each(group=group)
         return patterns
 
-    def anomalies(self, tokenized_column, groups):
-        """Accepts the tokenized rows and a dict of group indices and returns the index of the anomalies per group
+    def mismatches(self, tokenized_column, patterns):
+        """Accepts the tokenized rows and a list of allowed patterns and returns a list of booleans where True is match
+        not found (anomaly) whereas False is match found (not anomaly)
 
         Parameters
         ----------
         tokenized_column : List[Tuple[openclean_pattern.tokenize.token.Tokens]]
             tokenized rows
-        groups : Dict[int:List]
-            the dict with group label/cluster/size : list of rowidxs
+        patterns : List
+            the list of acceptable patterns
 
         Returns
         -------
-        Dict of groups: set
+            List of indices
         """
-        anomalies = dict()
-        for gr, rowidxs in groups.items():
-            group = [tokenized_column[i] for i in rowidxs]
-            anomalies[gr] = self.anomalies_each(group=group)
-        return anomalies
+
+        if not isinstance(patterns, list):
+            patterns = [patterns]
+
+        predicates = dict()
+        for pattern in patterns:
+            if pattern.pattern() not in predicates:
+                predicates[pattern.pattern()] = list()
+            for row in tokenized_column:
+                predicates[pattern.pattern()].append(pattern.compare(row))
+
+        mismatches = np.array([True] * len(tokenized_column))
+        for predicate in predicates.values():
+            mismatches = mismatches & np.logical_not(predicate)
+
+        return mismatches.tolist()
 
 
 COMPILER_DEFAULT = 'default'
 
+
 class DefaultRegexCompiler(RegexCompiler):
     """Compiles the full Regexp using PatternColumns with the top shares"""
+
     def __init__(self, method='row', per_group='top'):
         """Initializes the class
 
@@ -142,23 +148,6 @@ class DefaultRegexCompiler(RegexCompiler):
                 if pattern != top_pattern:
                     del condensed[pattern]
         return condensed
-
-    def anomalies_each(self, group):
-        """Retrieves the row idxs for rows that didn't match the majority pooled pattern
-
-        Returns
-        -------
-            set
-        """
-        patterns = self.pattern_generator()
-        for row in group:
-            patterns.insert(row)
-
-        # incase the patterns are calculated differently from the base row calculation method, the condense method
-        # converts the format
-        condensed = patterns.condense()
-
-        return condensed.anomalies()
 
     def pattern_generator(self):
         """returns the pattern generator mathod used.

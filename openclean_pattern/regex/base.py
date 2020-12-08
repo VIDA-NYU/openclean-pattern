@@ -156,7 +156,7 @@ class SingularRowPattern(OpencleanPattern):
         self.idx.add(r.rowidx)
         self.freq += 1
 
-    def compare(self, value, generator):
+    def compare(self, value, generator=None):
         """Parses through a single value's tokens and returns False if any Token value.regex_type
         doesn't match the respective pattern.element_type
 
@@ -166,7 +166,7 @@ class SingularRowPattern(OpencleanPattern):
             The pattern to evaluate against
         value : str or list[Tokens]
             The value to match with the pattern. This must be a single row.
-        generator: OpencleanPatternFinder
+        generator: OpencleanPatternFinder (optional)
             a OpencleanPatternFinder object containing the type resolvers and tokenizers used to create
             the original pattern
 
@@ -181,7 +181,7 @@ class SingularRowPattern(OpencleanPattern):
         if isinstance(value, str):
             value = [value]
 
-        if isinstance(value, list):
+        if isinstance(value, list) or isinstance(value, tuple):
             if len(value) == 1 and isinstance(value[0], str):
                 value = generator._parse(value)[0]
             else:
@@ -580,7 +580,7 @@ class PatternElement(object):
         self.len_min = 2 #min len
         self.len_max = 3 #max len
 
-        self.idx = [0, 1] #list of indices that went into this element. useful to trace anomalies back to rows
+        self.idx = [0, 1] #list of indices that went into this element. useful to trace mismatches back to rows
 
         self.punc_list = [] #list of punc tokens if this is a PUNCTUATION element
 
@@ -606,7 +606,7 @@ class PatternElement(object):
         self.len_min = token.size  # min len
         self.len_max = token.size  # max len
 
-        self.idx = set()  # list of indices that went into this element. useful to trace anomalies back to rows
+        self.idx = set()  # list of indices that went into this element. useful to trace mismatches back to rows
         self.idx.add(token.rowidx)
 
         self.punc_list = list()  # list of punc tokens if this is a PUNCTUATION elemenet

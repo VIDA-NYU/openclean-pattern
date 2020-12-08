@@ -12,7 +12,7 @@ from openclean_pattern.regex.compiler import DefaultRegexCompiler
 
 
 def test_evaluator_evaluate(business):
-    """Creates a pattern and evaluates it on the same column to see if mismatches are the same as anomalies
+    """Creates a pattern and evaluates it on the same column to see if mismatches are the same as mismatches
     """
     pf = OpencleanPatternFinder(
         tokenizer='default',

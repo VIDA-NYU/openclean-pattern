@@ -65,15 +65,20 @@ def test_default_regex_anomaly(business):
     tokenized = tokenizer.encode(business['Address '])
     groups = collector.collect(tokenized)
 
-    pattern = compiler.compile(tokenized, groups)
-    anomalies = compiler.anomalies(tokenized, groups)
+    patterns = compiler.compile(tokenized, groups)
 
     types = [['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA'],
              ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA'],
              ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']]
     for i, t in zip([9, 5, 7], types):
-        for element, truth in zip(pattern[i].top(pattern=True).container, t):
+        for element, truth in zip(patterns[i].top(pattern=True).container, t):
             assert element.element_type == truth
 
-    assert len(anomalies[7]) == 5 # except row#14, the other mismatches are e.g. those that had 14th (alphanum) instead of an alpha at position 2
-    assert 14 in anomalies[7] # index # 14 = 'ATTN HEATHER J HANSEN' which shouldnt match the pattern.
+    match_patterns = list()
+    for pat in patterns.values():
+        match_patterns.append(pat.top(pattern=True))
+
+    mismatches = compiler.mismatches(tokenized, patterns=match_patterns)
+    mismatched_rows = business.loc[mismatches, 'Address ']
+    assert len(mismatched_rows) == 7 # except row#14, the other mismatches are e.g. those that had 14th (alphanum) instead of an alpha at position 2
+    assert 14 in mismatched_rows.index # index # 14 = 'ATTN HEATHER J HANSEN' which shouldnt match the pattern.

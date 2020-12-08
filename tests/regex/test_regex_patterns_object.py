@@ -31,8 +31,9 @@ def test_patterns_object(business):
     for k, pat in patterns[7].items():
         assert pat.idx == {1,4,6,7,10,11,13,15}
 
-    anomalies = compiler.anomalies(tokenized, alignments)
-    assert anomalies[7] == [0,8,3,12,14]
+
+    anomalies = compiler.mismatches(tokenized, patterns[7].top(pattern=True))
+    assert list(business.loc[anomalies,'Address '].index) == [0, 2, 3, 5, 8, 9, 12, 14, 16, 17, 18, 19]
 
 
 def test_patterns_insert():
