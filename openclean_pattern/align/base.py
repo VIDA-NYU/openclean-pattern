@@ -23,19 +23,50 @@ class Aligner(metaclass=ABCMeta):
         self.alignment_type = alignment_type
 
     @abstractmethod
-    def align(self, column):
-        """the align method takes in a list of openclean_pattern.tokenize.token.Tokens and aligns them to minimize
-        the distance between that row and the others. The returned object is a dict of lists with each inner list
-         representing a group having the same no. of tokens / same cluster
+    def align(self, column, groups):
+        """Takes in the column and the groups and returns an aligned version of each group by adding Gap tokens to each row.
+        A list[Tuple(Tokens)] is returned with the aligned values
 
         Parameters
         ----------
-        column: list[openclean_pattern.tokenize.token.Token]
+        column: list[Tuple(Tokens)]
+            The column to align
+        groups: dict
+            The dict of groups with group id as key and row indices as values
+        Returns
+        -------
+            list[Tuple(Tokens)]
+        """
+        raise NotImplementedError()
+
+
+class Collector(metaclass=ABCMeta):
+    """Collects the token objects and returns groups of similar token groups"""
+
+    def __init__(self, collector_type):
+        """intializes the Collector object
+
+        Parameters
+        ----------
+        collector_type: str
+            the collector type to use to collect the column tokens
+        """
+        self.collector_type = collector_type
+
+    @abstractmethod
+    def collect(self, column):
+        """the collect method takes in a list of openclean_pattern.tokenize.token.Tokens and aligns them to minimize
+        the distance between that row and the others. The returned object is a dict of lists with each inner list
+        representing a group having the same no. of tokens
+
+        Parameters
+        ----------
+        column: list of tuple[openclean_pattern.tokenize.token.Token]
             the column to align
 
         Returns
         -------
-            a dict of lists with key 'n' representing the length and each inner list representing row_indices of groups
+             a dict of lists with key 'n' representing the cluster and each inner list representing row_indices of groups
              with n tokens / row_index of part of the cluster
-        """
+       """
         raise NotImplementedError()

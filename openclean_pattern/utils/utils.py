@@ -75,7 +75,8 @@ class StringComparator(Comparator):
         for j in range(abs(len(s1) - len(s2))):
             new_string += ambiguous_char
 
-        return new_string, new_string.count(ambiguous_char) / len(new_string)
+        ambiguity = new_string.count(ambiguous_char) / len(new_string) if len(new_string) > 0 else 0
+        return new_string, ambiguity
 
     @staticmethod
     def substring_finder(string1, string2):

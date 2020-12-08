@@ -16,7 +16,7 @@ def test_patternfinder_find(business):
     """test the patternfinder find method"""
     pf = OpencleanPatternFinder(
         tokenizer='default',
-        aligner='group',
+        aligner='pad',
         compiler=DefaultRegexCompiler()
     )
 
@@ -24,13 +24,15 @@ def test_patternfinder_find(business):
     assert len(patterns) == 4
 
     types = ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
-    for elements, type in zip(patterns[9].container, types):
-        assert elements.element_type == type
+    assert len(patterns[9]) == 1
+    for k, pat in patterns[9].items():
+        for elements, type in zip(pat.container, types):
+            assert elements.element_type == type
 
     # test column wise pattern creator
     pf = OpencleanPatternFinder(
         tokenizer='default',
-        aligner='group',
+        aligner='pad',
         compiler=DefaultRegexCompiler(method='col')
     )
 
@@ -38,5 +40,7 @@ def test_patternfinder_find(business):
     assert len(patterns) == 4
 
     types = ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
-    for elements, type in zip(patterns[9].container, types):
-        assert elements.element_type == type
+    assert len(patterns[9]) == 1
+    for k, pat in patterns[9].items():
+        for elements, type in zip(pat.container, types):
+            assert elements.element_type == type

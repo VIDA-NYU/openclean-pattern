@@ -5,17 +5,19 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""OpencleanPattern Finder class to identify regex patterns, find anomalies and evaluate patterns on new columns"""
+"""OpencleanPattern Finder class to identify regex patterns, find mismatches and evaluate patterns on new columns"""
 
 from openclean_pattern.tokenize.factory import TokenizerFactory
 from openclean_pattern.tokenize.regex import TOKENIZER_DEFAULT
 from openclean_pattern.tokenize.base import Tokenizer
 
-from openclean_pattern.align.factory import AlignerFactory
-from openclean_pattern.align.group import ALIGN_GROUP
-from openclean_pattern.align.base import Aligner
+from openclean_pattern.align.factory import AlignerFactory, CollectorFactory
+from openclean_pattern.align.group import COLLECT_GROUP
+from openclean_pattern.align.pad import ALIGN_PAD
+from openclean_pattern.align.base import Aligner, Collector
 
-from openclean_pattern.regex.compiler import DefaultRegexCompiler, RegexCompiler
+from openclean_pattern.regex.compiler import RegexCompiler, COMPILER_DEFAULT
+from openclean_pattern.regex.factory import CompilerFactory
 from openclean_pattern.evaluate.evaluator import Evaluator
 
 from openclean_pattern.utils.utils import WeightedRandomSampler, Distinct
@@ -32,37 +34,46 @@ from openclean.profiling.base import ProfilerResult
 
 class OpencleanPatternFinder(PatternFinder):
     """
-    OpencleanPatternFinder class to identify patterns and anomalies
+    OpencleanPatternFinder class to identify patterns and mismatches
     """
 
     def __init__(self,
                  frac: float = 1,
                  distinct: bool = True,
                  tokenizer: Union[str, Tokenizer] = TOKENIZER_DEFAULT,
-                 aligner: Union[str, Aligner] = ALIGN_GROUP,
-                 compiler: RegexCompiler = None) -> None:
+                 collector: Union[str, Collector] = COLLECT_GROUP,
+                 aligner: Union[str, Aligner] = ALIGN_PAD,
+                 compiler: Union[str, RegexCompiler] = COMPILER_DEFAULT) -> None:
         """
         Initialize the pattern finder class. This assumes that the input columns have been sampled if too large
 
         Parameters
         ----------
-        frac: float
+        frac: float (default = 1)
             sample size
+        distinct: bool (default = True)
+            set to true to only use distinct patterns to computer patterns
         tokenizer: str or object of class Tokenizer (default: 'default')
             the tokenizer to use
-        aligner: str (default: 'group')
+        collector: str or Collector (default: 'group')
+            aggregates tokens into similar groups
+        aligner: str (default: 'pad')
             the aligner to use
+        compiler: RegexCompiler
+            compiles the aligned tokens into Pattern objects
         """
         super(OpencleanPatternFinder, self).__init__()
         self.frac = frac
         self.distinct = distinct
         self._tokenizer = tokenizer if isinstance(tokenizer, Tokenizer) else TokenizerFactory.create_tokenizer(
             tokenizer)
+        self._collector = collector if isinstance(collector, Collector) else CollectorFactory.create_collector(
+            collector)
         self._aligner = aligner if isinstance(aligner, Aligner) else AlignerFactory.create_aligner(aligner)
         self._aligned = None
-        self.regex = None
+        self.patterns = None
         self.outliers = dict()
-        self._compiler = compiler if compiler is not None else DefaultRegexCompiler()
+        self._compiler = compiler if isinstance(compiler, RegexCompiler) else CompilerFactory.create_compiler(compiler)
 
     def process(self, values: Counter) -> ProfilerResult:
         """Compute one or more features over a set of distinct values. This is
@@ -97,7 +108,7 @@ class OpencleanPatternFinder(PatternFinder):
         param frac:  int
             distance to use for clustering
         distinct: bool (default: True)
-            if only distinct values should be used to generate patterns and anomalies
+            if only distinct values should be used to generate patterns and mismatches
 
         Returns
         -------
@@ -179,40 +190,26 @@ class OpencleanPatternFinder(PatternFinder):
         column = self._sample(series=series, frac=self.frac, distinct=self.distinct)
         self.values = column
         tokenizer = self._tokenizer
+        collector = self._collector
         aligner = self._aligner
         compiler = self._compiler
 
         # encode is a two step method. it does both, the tokenization and the type resolution in the same go
         tokenized = tokenizer.encode(column)
-        self._aligned = aligner.align(tokenized)
+        groups = collector.collect(tokenized)
+        self._aligned = aligner.align(tokenized, groups)
 
-        self.regex = compiler.compile(tokenized, self._aligned)
-        self.outliers = compiler.anomalies(tokenized, self._aligned)
+        self.patterns = compiler.compile(self._aligned, groups)
 
-        return self.regex
+        # by default, the top pattern in each group is considered non anomalous
+        mismatches = list()
+        for pattern in self.patterns.values():
+            mismatches.append(pattern.top(pattern=True))
 
-    def top(self, n=1):
-        """ get the nth top pattern
+        self.outliers = compiler.mismatches(self._aligned, mismatches)
 
-        Parameters
-        ----------
-        n: int
-            the rank
-        """
-        if self.regex is None:
-            raise RuntimeError("Find patterns first!")
+        return self.patterns
 
-        if n < 1:
-            raise ValueError("rank should be greater than zero")
-
-        n -= 1  # change rank to index
-
-        shares = dict()
-        for key, pattern in self.regex.items():
-            shares[pattern] = pattern.freq / len(self.values)
-
-        sorted_shares = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
-        return sorted_shares[n][0]
 
     def _parse(self, value):
         """parses values to the internal 'Tokens' representation

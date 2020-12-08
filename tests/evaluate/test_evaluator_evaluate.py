@@ -12,16 +12,16 @@ from openclean_pattern.regex.compiler import DefaultRegexCompiler
 
 
 def test_evaluator_evaluate(business):
-    """Creates a pattern and evaluates it on the same column to see if mismatches are the same as anomalies
+    """Creates a pattern and evaluates it on the same column to see if mismatches are the same as mismatches
     """
     pf = OpencleanPatternFinder(
         tokenizer='default',
-        aligner='group',
+        collector='group',
         compiler=DefaultRegexCompiler()
     )
 
     patterns = pf.find(series=business['Address '])
-    eval_pattern = patterns[7]
+    eval_pattern = patterns[7].top(pattern=True)
 
     predicate = pf.compare(eval_pattern, business['Address '].tolist(), negate=True)
     mismatches = business.loc[predicate, 'Address ']
@@ -35,4 +35,4 @@ def test_evaluator_evaluate(business):
     matched_pattern = pf.find(matches)
 
     assert len(matched_pattern) == 1
-    assert matched_pattern[7] == eval_pattern
+    assert matched_pattern[7].top(pattern=True) == eval_pattern

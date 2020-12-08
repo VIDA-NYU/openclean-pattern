@@ -76,6 +76,21 @@ class TypeResolver(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
+    @staticmethod
+    def gap(rowidx):
+        """returns a gap Token
+
+        Parameters
+        ----------
+        rowidx: int
+            row id
+
+        Returns
+        -------
+            Token
+        """
+        return Token(regex_type=SupportedDataTypes.GAP, size=0, value='', rowidx=rowidx)
+
 
 class DefaultTypeResolver(TypeResolver):
     """ The DefaultTypeResolver to be used. The general idea here is to always have the BasicTypeResolver
@@ -253,9 +268,9 @@ class AdvancedTypeResolver(TypeResolver, metaclass=ABCMeta):
                         if split == prefix:
                             ctype = self.get_label(split)
                             split_row.append(Token(regex_type=ctype,
-                                                    size=len(split),
-                                                    value=split,
-                                                    rowidx=rowidx))
+                                                   size=len(split),
+                                                   value=split,
+                                                   rowidx=rowidx))
                         elif split != '':
                             split_row.append(split)
                     prefix_processed_row.append(split_row)

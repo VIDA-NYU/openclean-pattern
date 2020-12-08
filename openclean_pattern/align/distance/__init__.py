@@ -1,23 +1,6 @@
-from abc import ABCMeta, abstractmethod
-
-DISTANCE_ABSOLUTE = 'ABS'
-DISTANCE_TDE = 'TDE'
-DISTANCE_ETDE = 'ETDE'
-
-DISTANCES = [DISTANCE_TDE, DISTANCE_ABSOLUTE, DISTANCE_ETDE]
-
-class Distance(object, metaclass=ABCMeta):
-    def __init__(self, dist):
-        self.dist_type = dist if dist in DISTANCES else None
-        if self.dist_type is None:
-            raise ValueError(dist)
-
-    @abstractmethod
-    def get_distance(self, u, v):
-        '''
-        should take in 2 rows and return the distance (float) between them
-        :param u: row1 (list)
-        :param v: row2 (list)
-        :return: distance (float)
-        '''
-        raise NotImplementedError()
+# This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
+#
+# Copyright (C) 2020 New York University.
+#
+# openclean_pattern is released under the Revised BSD License. See file LICENSE for
+# full license details.

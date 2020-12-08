@@ -65,7 +65,11 @@ class OpencleanPattern(Pattern, metaclass=ABCMeta):
         -------
         dict
         """
-        return self.container
+        this = dict()
+        for v, i in vars(self).items():
+            if v != 'container':
+                this[v] = i
+        return this
 
     def pattern(self):
         """Get a string representation of the pattern for display purposes.
@@ -85,7 +89,10 @@ class OpencleanPattern(Pattern, metaclass=ABCMeta):
         -------
         dict
         """
-        pass
+        this = dict()
+        for v, i in vars(self).items():
+            this[v] = i
+        return this
 
     @abstractmethod
     def update(self, tokens):
@@ -149,7 +156,7 @@ class SingularRowPattern(OpencleanPattern):
         self.idx.add(r.rowidx)
         self.freq += 1
 
-    def compare(self, value, generator):
+    def compare(self, value, generator=None):
         """Parses through a single value's tokens and returns False if any Token value.regex_type
         doesn't match the respective pattern.element_type
 
@@ -159,7 +166,7 @@ class SingularRowPattern(OpencleanPattern):
             The pattern to evaluate against
         value : str or list[Tokens]
             The value to match with the pattern. This must be a single row.
-        generator: OpencleanPatternFinder
+        generator: OpencleanPatternFinder (optional)
             a OpencleanPatternFinder object containing the type resolvers and tokenizers used to create
             the original pattern
 
@@ -174,7 +181,7 @@ class SingularRowPattern(OpencleanPattern):
         if isinstance(value, str):
             value = [value]
 
-        if isinstance(value, list):
+        if isinstance(value, list) or isinstance(value, tuple):
             if len(value) == 1 and isinstance(value[0], str):
                 value = generator._parse(value)[0]
             else:
@@ -189,6 +196,8 @@ class SingularRowPattern(OpencleanPattern):
             if p.element_type != v.regex_type.name:
                 if p.element_type == SupportedDataTypes.ALPHANUM and \
                         (v.regex_type.name in [SupportedDataTypes.ALPHA, SupportedDataTypes.DIGIT]):
+                    continue
+                elif p.element_type == SupportedDataTypes.GAP and v.regex_type.name == SupportedDataTypes.GAP:
                     continue
                 return False
 
@@ -303,7 +312,7 @@ class Patterns(defaultdict, metaclass=ABCMeta):
         """converts the row types into the key for the Patterns class"""
         key = ''
         for r in row:
-            key += '|' + str(r)
+            key += ' ' + str(r)
         return key.strip()
 
     @abstractmethod
@@ -333,14 +342,15 @@ class Patterns(defaultdict, metaclass=ABCMeta):
             shares[p] = self[p].freq / self.global_freq
         return shares
 
-    def top(self, n=1):
+    def top(self, n=1, pattern=False):
         """gets the element type with the n ranked share. Ensure this is computed on the Patterns.condensed() object
 
         Parameters
         ----------
         n: int
             ranking
-
+        pattern: bool
+            returns either the string represetation or the Pattern Object
         Returns
         -------
             str / int
@@ -352,7 +362,7 @@ class Patterns(defaultdict, metaclass=ABCMeta):
 
         shares = self.stats()
         sorted_shares = sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
-        return sorted_shares[n][0]
+        return sorted_shares[n][0] if not pattern else self[sorted_shares[n][0]]
 
     def anomalies(self, n=1):
         """gets the indices of rows that didnt match the nth pattern. Ensure this is computed on the
@@ -417,7 +427,7 @@ class RowPatterns(Patterns):
 
         Parameters
         ----------
-        row : list of Tokens
+        row : tuple of Tokens
         """
 
         self.global_freq += 1
@@ -443,6 +453,18 @@ class RowPatterns(Patterns):
             RowPatterns
         """
         return self
+
+    def distribution(self):
+        """returns each pattern and it's frequency
+
+        Returns
+        -------
+            dict
+        """
+        freqs = defaultdict(float)
+        for p in self:
+            freqs[p] = self[p].freq
+        return freqs
 
 
 class ColumnPatterns(Patterns):
@@ -558,7 +580,7 @@ class PatternElement(object):
         self.len_min = 2 #min len
         self.len_max = 3 #max len
 
-        self.idx = [0, 1] #list of indices that went into this element. useful to trace anomalies back to rows
+        self.idx = [0, 1] #list of indices that went into this element. useful to trace mismatches back to rows
 
         self.punc_list = [] #list of punc tokens if this is a PUNCTUATION element
 
@@ -584,7 +606,7 @@ class PatternElement(object):
         self.len_min = token.size  # min len
         self.len_max = token.size  # max len
 
-        self.idx = set()  # list of indices that went into this element. useful to trace anomalies back to rows
+        self.idx = set()  # list of indices that went into this element. useful to trace mismatches back to rows
         self.idx.add(token.rowidx)
 
         self.punc_list = list()  # list of punc tokens if this is a PUNCTUATION elemenet
@@ -626,14 +648,14 @@ class PatternElement(object):
         -------
             str
         """
-        if self.element_type == SupportedDataTypes.PUNCTUATION.name:
+        if self.element_type in [SupportedDataTypes.PUNCTUATION.name, SupportedDataTypes.SPACE_REP.name]:
             return '{}({})'.format(self.regex, ''.join(self.punc_list))
 
         pattern = self.regex if self.partial_ambiguous else self.partial_regex
         return '{}({}-{})'.format(pattern, self.len_min, self.len_max)
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.element_type)
+        return '{}({}-{})'.format(self.element_type, self.len_min, self.len_max)
 
     def __eq__(self, other):
         return self.element_type == other.element_type and \

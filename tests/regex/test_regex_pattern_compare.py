@@ -19,31 +19,31 @@ def test_regex_pattern_compare():
    """
     pf = OpencleanPatternFinder(
         tokenizer='default',
-        aligner='group',
+        collector='group',
         compiler=DefaultRegexCompiler()
     )
 
     pattern = pf.find(series=ROWS[0])[7]
 
     match = ROWS[1]
-    assert pattern.compare(value=match, generator=pf)
+    assert pattern.top(pattern=True).compare(value=match, generator=pf)
 
     mismatch = '321-West Broadway 10007'
-    assert not pattern.compare(value=mismatch, generator=pf)
+    assert not pattern.top(pattern=True).compare(value=mismatch, generator=pf)
 
 def test_regex_pattern_compile():
     """Tests a pattern using the Value Function
     """
     pf = OpencleanPatternFinder(
         tokenizer='default',
-        aligner='group',
+        collector='group',
         compiler=DefaultRegexCompiler()
     )
 
     pattern = pf.find(series=ROWS[0])[7]
 
     match = ROWS[1]
-    assert pattern.compile(generator=pf).eval(match)
+    assert pattern[pattern.top()].compile(generator=pf).eval(match)
 
     mismatch = '321-West Broadway 10007'
-    assert not pattern.compile(generator=pf).eval(mismatch)
+    assert not pattern[pattern.top()].compile(generator=pf).eval(mismatch)
