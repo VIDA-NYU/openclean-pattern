@@ -59,7 +59,7 @@ class OpencleanPatternFinder(PatternFinder):
             aggregates tokens into similar groups
         aligner: str (default: 'pad')
             the aligner to use
-        compiler: RegexCompiler
+        compiler: RegexCompiler (default: 'default')
             compiles the aligned tokens into Pattern objects
         """
         super(OpencleanPatternFinder, self).__init__()
