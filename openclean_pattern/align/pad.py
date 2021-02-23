@@ -10,7 +10,6 @@
 from openclean_pattern.datatypes.resolver import TypeResolver
 from openclean_pattern.align.base import Aligner
 
-from collections import defaultdict
 
 ALIGN_PAD = "pad"
 
@@ -45,7 +44,7 @@ class Padder(Aligner):
             size = 0
             for id in idx:
                 if not isinstance(id, int):
-                    raise KeyError("row indices should be int. found: ".format(id))
+                    raise KeyError("row indices should be int. found: {}".format(id))
 
                 if len(column[id]) > size:
                     size = len(column[id])

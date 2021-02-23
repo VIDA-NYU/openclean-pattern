@@ -144,6 +144,16 @@ class OpencleanPatternFinder(PatternFinder):
 
         return WeightedRandomSampler(weights=series, n=frac, random_state=42).sample()
 
+    @property
+    def tokenizer(self):
+        """Get the associated tokenizer.
+
+        Returns
+        -------
+        openclean_pattern.tokenize.base.Tokenizer
+        """
+        return self._tokenizer
+
     def compare(self, pattern: OpencleanPattern, values: Union[List[str], str], negate=False):
         """Get an instance of a value function that is predicate which can be
         used to test whether an given value is accepted by the pattern or not.
@@ -209,7 +219,6 @@ class OpencleanPatternFinder(PatternFinder):
         self.outliers = compiler.mismatches(self._aligned, mismatches)
 
         return self.patterns
-
 
     def _parse(self, value):
         """parses values to the internal 'Tokens' representation

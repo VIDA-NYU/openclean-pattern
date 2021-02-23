@@ -26,10 +26,11 @@ def test_regex_pattern_compare():
     pattern = pf.find(series=ROWS[0])[7]
 
     match = ROWS[1]
-    assert pattern.top(pattern=True).compare(value=match, generator=pf)
+    assert pattern.top(pattern=True).compare(value=match, tokenizer=pf.tokenizer)
 
     mismatch = '321-West Broadway 10007'
-    assert not pattern.top(pattern=True).compare(value=mismatch, generator=pf)
+    assert not pattern.top(pattern=True).compare(value=mismatch, tokenizer=pf.tokenizer)
+
 
 def test_regex_pattern_compile():
     """Tests a pattern using the Value Function
@@ -43,7 +44,7 @@ def test_regex_pattern_compile():
     pattern = pf.find(series=ROWS[0])[7]
 
     match = ROWS[1]
-    assert pattern[pattern.top()].compile(generator=pf).eval(match)
+    assert pattern[pattern.top()].compile(tokenizer=pf.tokenizer).eval(match)
 
     mismatch = '321-West Broadway 10007'
-    assert not pattern[pattern.top()].compile(generator=pf).eval(mismatch)
+    assert not pattern[pattern.top()].compile(tokenizer=pf.tokenizer).eval(mismatch)
