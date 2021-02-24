@@ -7,16 +7,17 @@
 
 """OpencleanPattern Evaluator class to evaluate regex patterns on new data"""
 
+from typing import List, Union
 
-from openclean_pattern.regex.base import PatternElement, OpencleanPattern
+from openclean_pattern.regex.base import OpencleanPattern
+from openclean_pattern.tokenize.base import Tokenizer
 from openclean_pattern.tokenize.token import Token
-from openclean_pattern.datatypes.base import SupportedDataTypes
 
 
 class Evaluator(object):
     """Class to contain different evaluation techniques / methods for patterns on new data"""
     @staticmethod
-    def compare(pattern, value, generator):
+    def compare(pattern: OpencleanPattern, value: Union[str, List[Token]], tokenizer: Tokenizer) -> bool:
         """Uses the default OpencleanPattern class' compare method. i.e. Parses through each token and
         returns False if any Token value.regex_type doesn't match the respective pattern.element_type
 
@@ -26,19 +27,19 @@ class Evaluator(object):
             The pattern to evaluate against
         value : str or list[Token]
             The str value or tokens of a single row to match with the pattern
-        generator: OpencleanPatternFinder
+        tokenizer: openclean_pattern.tokenize.base.Tokenizer
             a OpencleanPatternFinder object containing the type resolvers and tokenizers used to create
             the original pattern
-        
+
         Returns
         -------
-            bool
+        bool
 
         Raises
         ------
-            ValueError
+        ValueError
         """
         if not isinstance(pattern, OpencleanPattern):
             raise ValueError("Invalid OpencleanPattern")
 
-        return pattern.compare(value, generator)
+        return pattern.compare(value=value, tokenizer=tokenizer)

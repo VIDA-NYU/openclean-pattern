@@ -7,18 +7,19 @@
 
 """classes of base OpencleanPattern objects"""
 
-import numpy as np
-from collections import defaultdict
 from abc import abstractmethod, ABCMeta
+from collections import defaultdict
+from typing import List, Optional, Union
 
-from openclean_pattern.tokenize.token import Token
+import numpy as np
+
 from openclean_pattern.datatypes.base import SupportedDataTypes
-from openclean_pattern.utils.utils import StringComparator
 from openclean_pattern.function.value import IsMatch
+from openclean_pattern.tokenize.base import Tokenizer
+from openclean_pattern.tokenize.token import Token
+from openclean_pattern.utils.utils import StringComparator
 
 from openclean.profiling.pattern.base import Pattern
-
-### Row/Column Pattern
 
 
 class OpencleanPattern(Pattern, metaclass=ABCMeta):
@@ -30,7 +31,22 @@ class OpencleanPattern(Pattern, metaclass=ABCMeta):
         self.freq = 0
         self.idx = set()
 
-    def compile(self, negate=False, generator=None):
+    @abstractmethod
+    def compare(self, value: str, tokenizer: Tokenizer) -> bool:
+        """Evaluat the given value against the pattern.
+
+        Returns True if the value matches the pattern and Flase otherwise.
+
+        Parameters
+        ----------
+        value : str
+            The value to match with the pattern
+        tokenizer: openclean_pattern.tokenize.base.Tokenizer
+            Tokenizer that was used when generating the pattern.
+        """
+        raise NotImplementedError()
+
+    def compile(self, negate: Optional[bool] = False, tokenizer: Optional[Tokenizer] = None) -> IsMatch:
         """Get an instance of a value function that is predicate which can be
         used to test whether an given value is accepted by the pattern or not.
 
@@ -46,9 +62,9 @@ class OpencleanPattern(Pattern, metaclass=ABCMeta):
 
         Returns
         -------
-            openclean.function.value.base.ValueFunction
+        openclean.function.value.base.ValueFunction
         """
-        return IsMatch(func=self.compare, negated=negate, generator=generator)
+        return IsMatch(func=self.compare, negated=negate, tokenizer=tokenizer)
 
     def metadata(self):
         """Return a dictionary containing optional metadata associated with the
@@ -105,20 +121,6 @@ class OpencleanPattern(Pattern, metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    def compare(self, value, generator):
-        """Evaluates the given value against the pattern and returns a boolean
-
-        Parameters
-        ----------
-        value : str
-            The value to match with the pattern
-        generator: OpencleanPatternFinder
-            a OpencleanPatternFinder object containing the type resolvers and tokenizers used to create
-            the original pattern
-        """
-        raise NotImplementedError()
-
     def __iter__(self):
         return iter(self.container)
 
@@ -140,35 +142,37 @@ class SingularRowPattern(OpencleanPattern):
         container = list()
         super(SingularRowPattern, self).__init__(container)
 
-    def update(self, tokens):
-        """update using the tokens, the list (of OpencleanPattern Elements
+    def __eq__(self, other):
+        for s, o in zip(self, other):
+            if s.element_type != o.element_type:
+                return False
+        return len(self) == len(other)
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def append(self, value):
+        """append to the container without referencing it explicitly
 
         Parameters
         ----------
-         tokens: Token
-            the tokens to use create the OpencleanPattern
+        value: Token
+            The Token to append
         """
-        for r, e in zip(tokens, self):
-            if e.element_type != r.regex_type.name:
-                raise TypeError("incompatible row inserted")
-            e.update(r)
+        self.container.append(value)
 
-        self.idx.add(r.rowidx)
-        self.freq += 1
-
-    def compare(self, value, generator=None):
-        """Parses through a single value's tokens and returns False if any Token value.regex_type
-        doesn't match the respective pattern.element_type
+    def compare(self, value: Union[str, List[Token]], tokenizer: Optional[Tokenizer] = None) -> bool:
+        """Parses through a single value's tokens and returns False if any Token
+        value.regex_type doesn't match the respective pattern.element_type.
 
         Parameters
         ----------
         pattern : Pattern
             The pattern to evaluate against
-        value : str or list[Tokens]
-            The value to match with the pattern. This must be a single row.
-        generator: OpencleanPatternFinder (optional)
-            a OpencleanPatternFinder object containing the type resolvers and tokenizers used to create
-            the original pattern
+        value : str or list of openclean_pattern.tokenize.token.Token
+            The value to match with the pattern
+        tokenizer: openclean_pattern.tokenize.base.Tokenizer, default=None
+            Tokenizer that was used when generating the pattern.
 
         Returns
         -------
@@ -176,14 +180,14 @@ class SingularRowPattern(OpencleanPattern):
 
         Raises
         ------
-            ValueError
+        ValueError
         """
         if isinstance(value, str):
             value = [value]
 
         if isinstance(value, list) or isinstance(value, tuple):
             if len(value) == 1 and isinstance(value[0], str):
-                value = generator._parse(value)[0]
+                value = tokenizer.encode(value)[0]
             else:
                 for v in value:
                     if not isinstance(v, Token):
@@ -206,24 +210,21 @@ class SingularRowPattern(OpencleanPattern):
 
         return True
 
-    def append(self, value):
-        """append to the container without referencing it explicitly
+    def update(self, tokens):
+        """update using the tokens, the list (of OpencleanPattern Elements
 
         Parameters
         ----------
-        value: Token
-            The Token to append
+         tokens: Token
+            the tokens to use create the OpencleanPattern
         """
-        self.container.append(value)
+        for r, e in zip(tokens, self):
+            if e.element_type != r.regex_type.name:
+                raise TypeError("incompatible row inserted")
+            e.update(r)
 
-    def __eq__(self, other):
-        for s, o in zip(self, other):
-            if s.element_type != o.element_type:
-                return False
-        return len(self) == len(other)
-
-    def __hash__(self):
-        return hash(str(self))
+        self.idx.add(r.rowidx)
+        self.freq += 1
 
 
 class SingularColumnPattern(OpencleanPattern):
@@ -276,16 +277,15 @@ class SingularColumnPattern(OpencleanPattern):
                 max = top.freq
         return top
 
-    def compare(self, value, generator):
+    def compare(self, value: List[Token], tokenizer: Tokenizer) -> bool:
         """Evaluates the given value against the pattern and returns a boolean
 
         Parameters
         ----------
         value: list[Tokens]
             value / tokens to compare with the pattern
-        generator: OpencleanPatternFinder
-            a OpencleanPatternFinder object containing the type resolvers and tokenizers used to create
-            the original pattern
+        tokenizer: openclean_pattern.tokenize.base.Tokenizer
+            Tokenizer that was used when generating the pattern.
         """
         raise NotImplementedError()
 
@@ -296,8 +296,7 @@ class SingularColumnPattern(OpencleanPattern):
         return self.container.items()
 
 
-### Pattern Dicts
-
+# -- Pattern Dicts ------------------------------------------------------------
 
 class Patterns(defaultdict, metaclass=ABCMeta):
     """Class to create patterns from tokens"""
@@ -563,8 +562,7 @@ class ColumnPatterns(Patterns):
         return patterns
 
 
-### Pattern element / building blocks
-
+# -- Pattern element / building blocks ----------------------------------------
 
 class PatternElement(object):
     """
@@ -631,7 +629,9 @@ class PatternElement(object):
             self.punc_list.append(new_token.value)
         elif not self.partial_ambiguous:
             unknown_threshold = 0.8
-            # todo: because partial regex is built incrementally too, the order of token.values can have a huge impact on the results. Is there another way?
+            # todo: because partial regex is built incrementally too, the order
+            # of token.values can have a huge impact on the results. Is there
+            # another way?
             new_partial_regex, ambiguity_ratio = StringComparator.compare_strings(self.partial_regex, new_token.value)
             if ambiguity_ratio > unknown_threshold:
                 self.partial_ambiguous = True

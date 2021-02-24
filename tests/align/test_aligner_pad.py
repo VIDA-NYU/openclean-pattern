@@ -14,8 +14,6 @@ from openclean_pattern.tokenize.factory import DefaultTokenizer, RegexTokenizer
 from openclean_pattern.datatypes.resolver import AddressDesignatorResolver, DefaultTypeResolver
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 
-from openclean_pattern.opencleanpatternfinder import OpencleanPatternFinder
-
 
 def test_padder_align(business):
     rows = DefaultTokenizer().encode(business['Address '])
@@ -42,17 +40,10 @@ def test_padder_regex_col_compile(business):
     cp = DefaultRegexCompiler(method='col')
     patterns = cp.compile(padded_tokens, groups)
 
-    pf = OpencleanPatternFinder(
-        tokenizer=dt,
-        collector=cr,
-        aligner=ar,
-        compiler=cp
-    )
-
     for k, pat in patterns.items():
-        if k != -1: #ignore noise group for dbscan
+        if k != -1:  # ignore noise group for dbscan
             for value in business.loc[pat.top(pattern=True).idx, 'Address ']:
-                assert pat.top(pattern=True).compare(value, pf)
+                assert pat.top(pattern=True).compare(value, dt)
 
 
 def test_padder_regex_row_compile(business):
@@ -68,17 +59,10 @@ def test_padder_regex_row_compile(business):
     cp = DefaultRegexCompiler(method='row')
     patterns = cp.compile(padded_tokens, groups)
 
-    pf = OpencleanPatternFinder(
-        tokenizer=dt,
-        collector=cr,
-        aligner=ar,
-        compiler=cp
-    )
-
     for k, pat in patterns.items():
-        if k != -1: #ignore noise group for dbscan
+        if k != -1:  # ignore noise group for dbscan
             for value in business.loc[patterns[k].top(pattern=True).idx, 'Address ']:
-                assert pat.top(pattern=True).compare(value, pf)
+                assert pat.top(pattern=True).compare(value, dt)
 
 
 def test_padder_regex_typeresolver_col_compile(business):
@@ -95,17 +79,10 @@ def test_padder_regex_typeresolver_col_compile(business):
     cp = DefaultRegexCompiler(method='col')
     patterns = cp.compile(padded_tokens, groups)
 
-    pf = OpencleanPatternFinder(
-        tokenizer=dt,
-        collector=cr,
-        aligner=ar,
-        compiler=cp
-    )
-
     for k, pat in patterns.items():
-        if k != -1: #ignore noise group for dbscan
+        if k != -1:  # ignore noise group for dbscan
             for value in business.loc[patterns[k].top(pattern=True).idx, 'Address ']:
-                assert pat.top(pattern=True).compare(value, pf)
+                assert pat.top(pattern=True).compare(value, dt)
 
 
 def test_padder_regex_typeresolver_row_compile(business):
@@ -122,14 +99,7 @@ def test_padder_regex_typeresolver_row_compile(business):
     cp = DefaultRegexCompiler(method='row')
     patterns = cp.compile(padded_tokens, groups)
 
-    pf = OpencleanPatternFinder(
-        tokenizer=dt,
-        collector=cr,
-        aligner=ar,
-        compiler=cp
-    )
-
     for k, pat in patterns.items():
-        if k != -1: #ignore noise group for dbscan
+        if k != -1:  # ignore noise group for dbscan
             for value in business.loc[patterns[k].top(pattern=True).idx, 'Address ']:
-                assert pat.top(pattern=True).compare(value, pf)
+                assert pat.top(pattern=True).compare(value, dt)

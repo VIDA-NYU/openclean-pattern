@@ -40,19 +40,14 @@ class IsMatch(PreparedFunction):
         negated: bool, default=False
             Negate the return value of the function to check for values that
             are no matches for a given pattern.
-        generator: PatternFinder, default=DefaultPatternFinder
+        tokenizer: openclean_pattern.tokenizer.base.Tokenizer, default=None
             The steps used to create the pattern to perform on the value
         """
+        if not callable(func):
+            raise TypeError("Invalid Comparator")
         self.func = func
         self.negated = negated
-        self.generator = kwargs.get("generator")
-
-    def match(self, value):
-        func = self.func
-        if callable(func):
-            return self.func(value=value, generator=self.generator)
-
-        raise TypeError("Invalid Comparator")
+        self.tokenizer = kwargs.get("tokenizer")
 
     def eval(self, value):
         """Match the regular expression against the given string. If the value
@@ -68,7 +63,7 @@ class IsMatch(PreparedFunction):
         -------
         bool
         """
-        return self.match(value=value) != self.negated
+        return self.func(value=value, tokenizer=self.tokenizer) != self.negated
 
 
 class IsNotMatch(IsMatch):
@@ -85,11 +80,11 @@ class IsNotMatch(IsMatch):
         ----------
         func: Callable
             Pattern Expression compare method.
-        generator: PatternFinder, default=DefaultPatternFinder
+        tokenizer: openclean_pattern.tokenizer.base.Tokenizer, default=None
             The steps used to create the pattern to perform on the value
         """
         super(IsNotMatch, self).__init__(
             func=func,
             negated=True,
-            generator=kwargs.get('generator')
+            tokenizer=kwargs.get('tokenizer')
         )
