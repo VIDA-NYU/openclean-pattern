@@ -8,7 +8,7 @@
 """classes of base OpencleanPattern objects"""
 
 from abc import abstractmethod, ABCMeta
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import List, Optional, Union
 
 import numpy as np
@@ -562,7 +562,104 @@ class ColumnPatterns(Patterns):
         return patterns
 
 
-# -- Pattern element / building blocks ----------------------------------------
+# -- Pattern element / building blocks / Monitor ----------------------------------------
+
+class PatternElementSet(object):
+    """An individual set object to store values, idx and freq of the same type and size"""
+
+    def __init__(self):
+        """init the set"""
+        self.regex_type = None
+        self.size = 0
+        self.values = set()
+        self.idx = set()
+        self.freq = 0
+
+    def add(self, token):
+        if self.regex_type is None:
+            self.regex_type = token.regex_type
+            self.size = token.size
+        elif token.regex_type is not self.regex_type:
+            raise Exception("Incompatible Token used to update PatternElementSet")
+        self.values.add(token.value)
+        self.idx.add(token.rowidx)
+        self.freq += 1
+
+    def __hash__(self):
+        return hash(str(self.regex_type) + str(self.size))
+
+    def __iter__(self):
+        return self
+
+
+class PatternElementMonitor(defaultdict):
+    """Keeps track of all the pattern element sets. A set is one with the same regex type tokens of the same
+       size. e.g. 4 digit numbers will be one set and 5 digit numbers another. Only the biggest sets are compiled into
+        a PatternElemenet. This is done to identify and prevent anomalous values from being introduced during pattern compilation
+        """
+
+    def __init__(self, n=2):
+        """init the monitor
+
+        Parameters
+        ----------
+        n: int
+            the top n sets to use
+        """
+        self.default_factory = PatternElementSet
+        self.n = n
+        self.freq = 0
+
+    def update(self, token):
+        """update the elements in the tracker
+
+        Parameters
+        ----------
+        token: Token
+            the token object to insert into the monitor
+        """
+        self[token.size].add(token)
+        self.freq += 1
+
+    def load(self):
+        """On the tracked sets, perform this pseudocode:
+
+        1. get the frequency for each set and sort them
+        2. starting from the largest, keep adding to the pattern to evolve it
+        3. stop when 97.5% of the values have been added
+
+        Note: if there are multiple sets with the same frequency, to be fair
+        add them all before stopping even if you're not able to stop at 97.5%
+        """
+        # create a counter and sort the frequencies
+        minmax = Counter()
+        for i in self.values():
+            minmax[i.size] += i.freq
+        common = minmax.most_common()
+
+        freq_sets = defaultdict(list)
+        for c in common:
+            freq_sets[c[1]].append(c[0])
+
+        # select sizes to be able to combine 97.5% of the data
+        covered = 0
+        sorted_freqs = sorted(freq_sets.keys(), reverse=True)
+        pe = None
+        for k in sorted_freqs:
+            v = freq_sets[k]
+            for set_id in v:
+                if pe is None:
+                    pe = PatternElement(self[set_id])
+                else:
+                    pe.update(self[set_id])
+                covered += k
+
+            if covered / self.freq > .975:
+                break
+
+        return pe
+
+
 
 class PatternElement(object):
     """
@@ -591,7 +688,7 @@ class PatternElement(object):
     exhausted, the final PatternColumnElement object  is condensed by PatternColumn into a Regex Expression for the position
     """
 
-    def __init__(self, token):
+    def __init__(self, token=None):
         """initializes the PatternElement and keeps track of numerous stats incrementally as it builds the regexp
 
         Parameters
@@ -599,47 +696,71 @@ class PatternElement(object):
         token : Token
             the token used to create this PatternElement object
         """
-        self.element_type = token.regex_type.name  # type of regex element
-        self.regex = token.regex_type.value  # regex representation
-        self.len_min = token.size  # min len
-        self.len_max = token.size  # max len
+        self.element_type = None  # type of regex element
+        self.regex = None  # regex representation
+        self.len_min = np.inf  # min len
+        self.len_max = -np.inf  # max len
+        self.values = set()
 
         self.idx = set()  # list of indices that went into this element. useful to trace mismatches back to rows
-        self.idx.add(token.rowidx)
-
         self.punc_list = list()  # list of punc tokens if this is a PUNCTUATION elemenet
-        if token.regex_type == SupportedDataTypes.PUNCTUATION:
-            self.punc_list.append(token.value)
-
-        self.partial_regex = token.value  # partial regex value
+        self.partial_regex = None  # partial regex value
         self.partial_ambiguous = False  # is partial regex value too ambiguous to be used
+        self.freq = 0  # total frequency of tokens seen (useful for element proportions to identify anomalous patterns)
 
-        self.freq = 1  # total frequency of tokens seen (useful for element proportions to identify anomalous patterns)
+        if isinstance(token, Token):
+            token = PatternElementSet().add(token)
+        if token is not None:
+            self.from_set(token) # init PatternElement from PatternElementSet
 
-    def update(self, new_token):
+    def update(self, next_input):
         """updates the PatternElement object
 
         Parameters
         ----------
-        new_token : Token
-            the token used to create this PatternElement object
+        next_input : Token or PatternElementSet
+            the token or set to update this PatternElement object
 
         """
-        if new_token.regex_type == SupportedDataTypes.PUNCTUATION and new_token.value not in self.punc_list:
-            self.punc_list.append(new_token.value)
-        elif not self.partial_ambiguous:
-            unknown_threshold = 0.8
-            # todo: because partial regex is built incrementally too, the order
-            # of token.values can have a huge impact on the results. Is there
-            # another way?
-            new_partial_regex, ambiguity_ratio = StringComparator.compare_strings(self.partial_regex, new_token.value)
-            if ambiguity_ratio > unknown_threshold:
-                self.partial_ambiguous = True
-            self.partial_regex = new_partial_regex
-        self.len_min = min(self.len_min, new_token.size)
-        self.len_max = max(self.len_max, new_token.size)
-        self.freq += 1
-        self.idx.add(new_token.rowidx)
+        if isinstance(next_input, Token):
+            next_input = PatternElementSet().add(next_input)
+
+        if isinstance(next_input, PatternElementSet):
+            if next_input.regex_type == SupportedDataTypes.PUNCTUATION:
+                self.punc_list += next_input.values
+            elif not self.partial_ambiguous:
+                unknown_threshold = 0.8
+                # todo: because partial regex is built incrementally too, the order
+                # of token.values can have a huge impact on the results. Is there
+                # another way? what about updating with a tree like clusterW for alignment?
+                for val in next_input.values:
+                    if self.partial_regex is None:
+                        self.partial_regex = val
+                    new_partial_regex, ambiguity_ratio = StringComparator.compare_strings(self.partial_regex, val)
+                    if ambiguity_ratio > unknown_threshold:
+                        self.partial_ambiguous = True
+                    self.partial_regex = new_partial_regex
+            self.freq += next_input.freq
+            self.idx = self.idx.union(next_input.idx)
+            self.len_min = min(self.len_min, next_input.size)
+            self.len_max = max(self.len_max, next_input.size)
+        else:
+            raise TypeError("expected Token or PatternElementSet")
+
+    def from_set(self, s: PatternElementSet):
+        """create a Pattern Element object from input set
+
+        Parameters
+        ----------
+        s : PatternElementSet
+            the set to use as the init
+        """
+        if self.element_type is not None or self.regex is not None:
+            raise Exception("use from_set to create new PatternElements. To update an existing one, use 'update'")
+
+        self.element_type = s.regex_type.name  # type of regex element
+        self.regex = s.regex_type.value  # regex representation
+        self.update(s)
 
     def __str__(self):
         """String representation of the PatternElement object

@@ -9,7 +9,7 @@
 
 
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
-from openclean_pattern.regex.base import SingularRowPattern, PatternElement
+from openclean_pattern.regex.base import SingularRowPattern, PatternElement, PatternElementSet, PatternElementMonitor
 from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.tokenize.regex import DefaultTokenizer
 from openclean_pattern.align.group import Group
@@ -87,3 +87,18 @@ def test_patterns_update():
                    and pattern[6].partial_regex == '1000X'
 
 
+def test_pattern_element_set(business):
+    tokenizer = DefaultTokenizer()
+    tokenized = tokenizer.encode(business['Address '])
+    tokenized = [tokenized[0][4], tokenized[0][6], tokenized[1][2], tokenized[1][4], tokenized[1][6]] # mixing matching a bunch of ALPHAs
+    for i, t in enumerate(tokenized): # updating row idx for the synthetic data
+        t.rowidx = i
+
+    pet = PatternElementMonitor()
+    for t in tokenized:
+        pet.update(t)
+
+    pet.load()
+
+def test_pattern_element_tracker():
+    return
