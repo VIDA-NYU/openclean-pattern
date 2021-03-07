@@ -87,7 +87,7 @@ def test_patterns_update():
            and pattern[6].partial_regex == '1000X'
 
 
-def test_pattern_element_set(business):
+def test_pattern_element_set(business, year):
     tokenizer = DefaultTokenizer()
     tokenized = tokenizer.encode(business['Address '])
     tokenized = [tokenized[0][4], tokenized[0][6], tokenized[1][2], tokenized[1][4], tokenized[1][6]] # mixing matching a bunch of ALPHAs
@@ -109,8 +109,21 @@ def test_pattern_element_set(business):
     for i in pe.values:
         assert i in ['st','ne','w','ave','davis']
 
+    tokenized = tokenizer.encode(year)
+    months = [t[0] for t in tokenized]
+    pet = PatternElementSizeMonitor()
+    for t in months:
+        pet.update(t)
 
-def test_anomalous_elements(checkintime):
+    pe = pet.load()
+    assert isinstance(pe, PatternElement)
+    assert pe.element_type == 'ALPHA'
+    assert len(pe.values) > 0
+    for i in pe.values: #verify values are accessible
+        assert i in ['july','april']
+
+
+def test_anomalous_elements(checkintime, specimen):
     """Test if anomalous values (>90% of the dataset) are excluded during pattern element generation
 
     Process for creating PatternElements:
@@ -138,64 +151,49 @@ def test_anomalous_elements(checkintime):
     # without anomaly removal = ['DIGIT[2-2]', '/', 'DIGIT[2-2]', '/', 'DIGIT[4-5]', 'SPACE_REP[1-1]', 'DIGIT[2-2]', ':', 'DIGIT[2-2]', ':',
     #  'DIGIT[2-2]', 'SPACE_REP[1-1]', 'ALPHA[2-2]', 'SPACE_REP[1-1]', '+', 'DIGIT[4-4]']
 
-    truth = ['DIGIT[2-2]', '/', 'DIGIT[2-2]', '/', 'DIGIT[4-4]', 'SPACE_REP[1-1]', 'DIGIT[2-2]', ':', 'DIGIT[2-2]', ':',
+    checkin_truth = ['DIGIT[2-2]', '/', 'DIGIT[2-2]', '/', 'DIGIT[4-4]', 'SPACE_REP[1-1]', 'DIGIT[2-2]', ':', 'DIGIT[2-2]', ':',
      'DIGIT[2-2]', 'SPACE_REP[1-1]', 'ALPHA[2-2]', 'SPACE_REP[1-1]', '+', 'DIGIT[4-4]']
 
-    collector = Group()
-    compiler = DefaultRegexCompiler(method='col')
-    tokenizer = DefaultTokenizer()
+    specimen_truth = ['DIGIT[4-4]', '/', 'DIGIT[2-2]', '/', 'DIGIT[2-2]']
 
-    # Get a sample of terms from the column.
-    terms = list(checkintime)
+    compiler1 = DefaultRegexCompiler(method='col')
+    compiler2 = DefaultRegexCompiler(method='row')
 
-    # Tokenize and convert tokens into representation.
-    tokenized_terms = tokenizer.encode(terms)
+    def test(df, compiler, truth):
+        collector = Group()
+        tokenizer = DefaultTokenizer()
 
-    # Group tokenized terms by number of tokens.
-    clusters = collector.collect(tokenized_terms)
-    for _, term_ids in clusters.items():
-        if len(term_ids) / len(terms) < 0.9:
+        # Get a sample of terms from the column.
+        terms = list(df)
 
-            # Ignore small clusters.
-            continue
+        # Tokenize and convert tokens into representation.
+        tokenized_terms = tokenizer.encode(terms)
 
-        # Return the pattern for the found cluster. This assumes that
-        # maximally one cluster can satisfy the threshold.
-        patterns = compiler.compile(tokenized_terms, {0: term_ids})[0]
-        break
+        # Group tokenized terms by number of tokens.
+        clusters = collector.collect(tokenized_terms)
 
-    if patterns:
-        tokens = list()
-        for el in patterns.top(n=1, pattern=True):
-            if el.punc_list:
-                token = ''.join(el.punc_list)
-            else:
-                token = '{}[{}-{}]'.format(el.element_type, el.len_min, el.len_max)
-            tokens.append(token)
+        for _, term_ids in clusters.items():
+            if len(term_ids) / len(terms) < 0.9:
+                # Ignore small clusters.
+                continue
 
-    for actual, expected in zip(tokens, truth):
-        assert actual == expected
+            # Return the pattern for the found cluster. This assumes that
+            # maximally one cluster can satisfy the threshold.
+            patterns = compiler.compile(tokenized_terms, {0: term_ids})[0]
+            break
 
-    # verifying method = row agrees
-    compiler = DefaultRegexCompiler(method='row')
-    for _, term_ids in clusters.items():
-        if len(term_ids) / len(terms) < 0.9:
-            # Ignore small clusters.
-            continue
+        if patterns:
+            tokens = list()
+            for el in patterns.top(n=1, pattern=True):
+                if el.punc_list:
+                    token = ''.join(el.punc_list)
+                else:
+                    token = '{}[{}-{}]'.format(el.element_type, el.len_min, el.len_max)
+                tokens.append(token)
 
-        # Return the pattern for the found cluster. This assumes that
-        # maximally one cluster can satisfy the threshold.
-        patterns = compiler.compile(tokenized_terms, {0: term_ids})[0]
-        break
+        for actual, expected in zip(tokens, truth):
+            assert actual == expected
 
-    if patterns:
-        tokens = list()
-        for el in patterns.top(n=1, pattern=True):
-            if el.punc_list:
-                token = ''.join(el.punc_list)
-            else:
-                token = '{}[{}-{}]'.format(el.element_type, el.len_min, el.len_max)
-            tokens.append(token)
-
-    for actual, expected in zip(tokens, truth):
-        assert actual == expected
+    for df, truth in [(checkintime, checkin_truth), (specimen, specimen_truth)]:
+        for compiler in [compiler1, compiler2]:
+            test(df, compiler, truth)
