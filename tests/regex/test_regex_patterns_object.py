@@ -98,7 +98,13 @@ def test_pattern_element_set(business):
     for t in tokenized:
         pet.update(t)
 
-    pet.load()
+    pe = pet.load()
 
-def test_pattern_element_tracker():
-    return
+    assert isinstance(pe, PatternElement)
+    assert pe.idx == set([0,1,2,3,4])
+    assert pe.element_type == 'ALPHA'
+    assert pe.len_max == 5
+    assert pe.len_min == 1
+    assert len(pe.values) > 0
+    for i in pe.values:
+        assert i in ['st','ne','w','ave','davis']

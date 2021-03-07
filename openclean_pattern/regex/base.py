@@ -742,6 +742,7 @@ class PatternElement(object):
                     self.partial_regex = new_partial_regex
             self.freq += next_input.freq
             self.idx = self.idx.union(next_input.idx)
+            self.values = self.values.union(next_input.values)
             self.len_min = min(self.len_min, next_input.size)
             self.len_max = max(self.len_max, next_input.size)
         else:
