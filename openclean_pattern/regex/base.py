@@ -253,10 +253,12 @@ class SingularColumnPattern(OpencleanPattern):
                 raise TypeError("expected: openclean_pattern.tokenize.token.Token, got: {}".format(token.__class__))
 
             if token.regex_type.name not in self.container:
-                self[token.regex_type.name] = PatternElement(token)
+                self[token.regex_type.name] = PatternElementSizeMonitor().update(token)
             else:
                 self[token.regex_type.name].update(token)
 
+        # Profile of all the tokens that went into creating this pattern,
+        # not just the ones that created the final pattern element
         self.idx.add(token.rowidx)
         self.column_freq += 1
         self.column_min = min(self.column_min, token.size)
@@ -275,7 +277,8 @@ class SingularColumnPattern(OpencleanPattern):
             if c.freq > max:
                 top = c
                 max = top.freq
-        return top
+        # loads the size anomalies removed Pattern Element from the PatternElementSizeMonitor
+        return top.load()
 
     def compare(self, value: List[Token], tokenizer: Tokenizer) -> bool:
         """Evaluates the given value against the pattern and returns a boolean
@@ -585,6 +588,8 @@ class PatternElementSet(object):
         self.idx.add(token.rowidx)
         self.freq += 1
 
+        return self
+
     def __hash__(self):
         return hash(str(self.regex_type) + str(self.size))
 
@@ -592,23 +597,23 @@ class PatternElementSet(object):
         return self
 
 
-class PatternElementMonitor(defaultdict):
+class PatternElementSizeMonitor(defaultdict):
     """Keeps track of all the pattern element sets. A set is one with the same regex type tokens of the same
        size. e.g. 4 digit numbers will be one set and 5 digit numbers another. Only the biggest sets are compiled into
         a PatternElemenet. This is done to identify and prevent anomalous values from being introduced during pattern compilation
         """
 
-    def __init__(self, n=2):
+    def __init__(self, threshold=.9):
         """init the monitor
 
         Parameters
         ----------
-        n: int
-            the top n sets to use
+        threshold: int (default: 90%)
+            the proportion of values that is considered non-anomalous
         """
         self.default_factory = PatternElementSet
-        self.n = n
         self.freq = 0
+        self.threshold = threshold
 
     def update(self, token):
         """update the elements in the tracker
@@ -621,6 +626,8 @@ class PatternElementMonitor(defaultdict):
         self[token.size].add(token)
         self.freq += 1
 
+        return self
+
     def load(self):
         """On the tracked sets, perform this pseudocode:
 
@@ -629,7 +636,7 @@ class PatternElementMonitor(defaultdict):
         3. stop when 97.5% of the values have been added
 
         Note: if there are multiple sets with the same frequency, to be fair
-        add them all before stopping even if you're not able to stop at 97.5%
+        add them all before stopping even if you're not able to stop at 90%
         """
         # create a counter and sort the frequencies
         minmax = Counter()
@@ -654,11 +661,10 @@ class PatternElementMonitor(defaultdict):
                     pe.update(self[set_id])
                 covered += k
 
-            if covered / self.freq > .975:
+            if covered / self.freq > self.threshold:
                 break
 
         return pe
-
 
 
 class PatternElement(object):
