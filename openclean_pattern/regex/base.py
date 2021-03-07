@@ -215,12 +215,10 @@ class SingularRowPattern(OpencleanPattern):
 
         Parameters
         ----------
-         tokens: Token
+         tokens: tuple(Token)
             the tokens to use create the OpencleanPattern
         """
         for r, e in zip(tokens, self):
-            if e.element_type != r.regex_type.name:
-                raise TypeError("incompatible row inserted")
             e.update(r)
 
         self.idx.add(r.rowidx)
@@ -441,19 +439,23 @@ class RowPatterns(Patterns):
         if key not in self:
             self[key] = SingularRowPattern()
             for r in row:
-                self[key].append(PatternElement(r))
+                self[key].append(PatternElementSizeMonitor().update(r))
             self[key].freq += 1
             self[key].idx.add(r.rowidx)
         else:
             self[key].update(row)
 
     def condense(self):
-        """converts the patterns class to the default representation incase they were compiled using a different method
+        """executes the pattern element size monitors and creates final pattern elements that have anomalous values
+        excluded.
 
         Returns
         -------
             RowPatterns
         """
+        for pats in self.values():
+            for i, s in enumerate(pats):
+                pats.container[i] = s.load() # load PatternElement from size monitor
         return self
 
     def distribution(self):
@@ -479,30 +481,39 @@ class ColumnPatterns(Patterns):
     for column token position 0, the OpencleanPattern components would be:
         {
             NUM:
-                PatternElement{
-                    self.element_type = NUM
-                    self.regex = NUM
-                    self.len_min = 2
-                    self.len_max = 3
-                    self.freq = 2
-                    self.punc_list = list()
+                PatternElementSizeMonitor
+                    PatternElementSet{
+                        self.regex_type = NUM
+                        self.size = 3
+                        self.freq = 1
+                        self.values = {123}
+                        self.idx = {0}
+                    },
+                    PatternElementSet{
+                        self.regex_type = NUM
+                        self.size = 2
+                        self.freq = 1
+                        self.values = {23}
+                        self.idx = {1}
+                    }
                 }
             ALPHA:
-                PatternElement{
-                    self.element_type = ALPHA
-                    self.regex = ALPHA
-                    self.len_min = 4
-                    self.len_max = 4
-                    self.freq = 1
-                    self.punc_list = list()
+                PatternElementSizeMonitor{
+                    PatternElementSet{
+                        self.regex_type = ALPHA
+                        self.size = 4
+                        self.freq = 1
+                        self.values = {'abra'}
+                        self.idx = {2}
+                    }
                 }
         }
         self.global_min = 2
         self.global_max = 4
         self.global_freq = 3
 
-    The insert method adds tokens to the respective PatternElement. The final PatternElements are
-    condensed into a Regex Expression as a RowPatterns
+    The insert method adds tokens to the respective PatternElementSizeMonitor. The final PatternElements are
+    loaded from the SizeMonitors and condensed into a Regex Expression as a RowPatterns
     """
 
     def __init__(self):
@@ -568,7 +579,16 @@ class ColumnPatterns(Patterns):
 # -- Pattern element / building blocks / Monitor ----------------------------------------
 
 class PatternElementSet(object):
-    """An individual set object to store values, idx and freq of the same type and size"""
+    """An individual set object to store values, idx and freq of the same type and size
+
+            PatternElementSet{
+                self.regex_type = NUM
+                self.size = 2
+                self.freq = 1
+                self.values = list()
+                self.idx = set()
+            },
+    """
 
     def __init__(self):
         """init the set"""

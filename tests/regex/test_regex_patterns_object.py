@@ -134,6 +134,13 @@ def test_anomalous_elements(checkintime):
 
         The final Patten element ~ ALPHA (3-3) instead of ALPHA(2-3)
     """
+    # The dataset contains 9 anomalous values for the 5th position (year) thus the pattern element = DIGIT[4-5] instead of DIGIT[4-4]
+    # without anomaly removal = ['DIGIT[2-2]', '/', 'DIGIT[2-2]', '/', 'DIGIT[4-5]', 'SPACE_REP[1-1]', 'DIGIT[2-2]', ':', 'DIGIT[2-2]', ':',
+    #  'DIGIT[2-2]', 'SPACE_REP[1-1]', 'ALPHA[2-2]', 'SPACE_REP[1-1]', '+', 'DIGIT[4-4]']
+
+    truth = ['DIGIT[2-2]', '/', 'DIGIT[2-2]', '/', 'DIGIT[4-4]', 'SPACE_REP[1-1]', 'DIGIT[2-2]', ':', 'DIGIT[2-2]', ':',
+     'DIGIT[2-2]', 'SPACE_REP[1-1]', 'ALPHA[2-2]', 'SPACE_REP[1-1]', '+', 'DIGIT[4-4]']
+
     collector = Group()
     compiler = DefaultRegexCompiler(method='col')
     tokenizer = DefaultTokenizer()
@@ -166,8 +173,29 @@ def test_anomalous_elements(checkintime):
                 token = '{}[{}-{}]'.format(el.element_type, el.len_min, el.len_max)
             tokens.append(token)
 
-    truth = ['DIGIT[2-2]', '/', 'DIGIT[2-2]', '/', 'DIGIT[4-4]', 'SPACE_REP[1-1]', 'DIGIT[2-2]', ':', 'DIGIT[2-2]', ':',
-     'DIGIT[2-2]', 'SPACE_REP[1-1]', 'ALPHA[2-2]', 'SPACE_REP[1-1]', '+', 'DIGIT[4-4]']
+    for actual, expected in zip(tokens, truth):
+        assert actual == expected
+
+    # verifying method = row agrees
+    compiler = DefaultRegexCompiler(method='row')
+    for _, term_ids in clusters.items():
+        if len(term_ids) / len(terms) < 0.9:
+            # Ignore small clusters.
+            continue
+
+        # Return the pattern for the found cluster. This assumes that
+        # maximally one cluster can satisfy the threshold.
+        patterns = compiler.compile(tokenized_terms, {0: term_ids})[0]
+        break
+
+    if patterns:
+        tokens = list()
+        for el in patterns.top(n=1, pattern=True):
+            if el.punc_list:
+                token = ''.join(el.punc_list)
+            else:
+                token = '{}[{}-{}]'.format(el.element_type, el.len_min, el.len_max)
+            tokens.append(token)
 
     for actual, expected in zip(tokens, truth):
         assert actual == expected
