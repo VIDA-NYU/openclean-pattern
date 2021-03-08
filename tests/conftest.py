@@ -9,11 +9,13 @@
 import os
 import pandas as pd
 import pytest
-
+from openclean.pipeline import stream
 
 DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '.files')
 BUSINESS = os.path.join(DIR, 'business.csv')
-
+CHECKINTIME = os.path.join(DIR, 'check-in-time.txt.gz')
+YEAR = os.path.join(DIR, 'year.txt.gz')
+SPECIMEN = os.path.join(DIR, 'specimen.txt.gz')
 
 @pytest.fixture
 def dates():
@@ -32,3 +34,26 @@ def business():
     """Load the business dataset"""
     return pd.read_csv(BUSINESS)
 
+@pytest.fixture
+def checkintime():
+    """Load the check in time dataset"""
+    return stream(CHECKINTIME, header=['term', 'freq'], delim='\t', compressed=True)\
+        .select('term')\
+        .sample(1000, seed=42)\
+        .to_df()['term']
+
+@pytest.fixture
+def specimen():
+    """Load the specimen dataset"""
+    return stream(SPECIMEN, header=['term', 'freq'], delim='\t', compressed=True)\
+        .select('term')\
+        .sample(1000, seed=42)\
+        .to_df()['term']
+
+@pytest.fixture
+def year():
+    """Load the year dataset"""
+    return stream(YEAR, header=['term', 'freq'], delim='\t', compressed=True)\
+        .select('term')\
+        .sample(1000, seed=42)\
+        .to_df()['term']
