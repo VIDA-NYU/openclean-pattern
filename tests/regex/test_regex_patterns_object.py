@@ -123,8 +123,8 @@ def test_pattern_element_set(business, year):
         assert i in ['july','april']
 
 
-def test_anomalous_elements(checkintime, specimen):
-    """Test if anomalous values (>90% of the dataset) are excluded during pattern element generation
+def test_pattern_without_anomalous_elements(checkintime, specimen):
+    """Test if anomalous values (<90% of the dataset) are excluded during pattern element generation
 
     Process for creating PatternElements:
      1. create sets of differently lengthed values (e.g. 2 sets total, 1 for ['ne','st'] and 1 for ['w']
@@ -197,3 +197,41 @@ def test_anomalous_elements(checkintime, specimen):
     for df, truth in [(checkintime, checkin_truth), (specimen, specimen_truth)]:
         for compiler in [compiler1, compiler2]:
             test(df, compiler, truth)
+
+
+def test_anomalous_values_in_mismatches(checkintime):
+    """Test if values not included in the pattern elements are identified as mismatches
+    """
+    collector = Group()
+    tokenizer = DefaultTokenizer()
+    compiler = DefaultRegexCompiler(method='col')
+
+    # Get a sample of terms from the column.
+    terms = list(checkintime)
+
+    # Tokenize and convert tokens into representation.
+    tokenized_terms = tokenizer.encode(terms)
+
+    # Group tokenized terms by number of tokens.
+    clusters = collector.collect(tokenized_terms)
+
+    for _, term_ids in clusters.items():
+        if len(term_ids) / len(terms) < 0.9:
+            # Ignore small clusters.
+            continue
+
+        # Return the pattern for the found cluster. This assumes that
+        # maximally one cluster can satisfy the threshold.
+        patterns = compiler.compile(tokenized_terms, {0: term_ids})[0]
+        break
+
+    pattern = patterns.top(n=1, pattern=True)
+
+    mismatches = list()
+    for term in terms:
+        if not pattern.compare(term, tokenizer):
+            mismatches.append(term)
+
+    assert mismatches == ['04/22/43971 02:40:00 AM +0000', '01/11/43972 04:40:00 PM +0000', '10/03/43971 04:40:00 PM +0000',
+     '04/20/43971 12:40:00 AM +0000', '05/08/43971 06:40:00 PM +0000', '08/29/43971 06:40:00 AM +0000',
+     '08/27/43971 04:40:00 AM +0000', '10/03/43971 12:00:00 AM +0000', '10/16/43971 09:20:00 PM +0000']

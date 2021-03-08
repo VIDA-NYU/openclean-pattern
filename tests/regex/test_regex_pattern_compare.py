@@ -11,7 +11,7 @@ from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.opencleanpatternfinder import OpencleanPatternFinder
 
 ROWS = [['32A West Broadway 10007'],
-        ['54E East Village 10003']]
+        ['54E East VillageA 10003']]
 
 
 def test_regex_pattern_compare():

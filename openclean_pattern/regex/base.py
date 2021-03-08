@@ -193,6 +193,9 @@ class SingularRowPattern(OpencleanPattern):
                     if not isinstance(v, Token):
                         raise ValueError("Invalid Token: {}".format(v))
 
+        if len(self) != len(value):
+            return False
+
         for p, v in zip(self, value):
             if not isinstance(p, PatternElement):
                 raise ValueError("Invalid PatternElement")
@@ -205,8 +208,10 @@ class SingularRowPattern(OpencleanPattern):
                     continue
                 return False
 
-        if len(self) != len(value):
-            return False
+            if p.len_min <= v.size <= p.len_max:
+                continue
+            else:
+                return False
 
         return True
 
