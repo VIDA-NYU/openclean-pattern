@@ -39,7 +39,7 @@ def checkintime():
     """Load the check in time dataset"""
     return stream(CHECKINTIME, header=['term', 'freq'], delim='\t', compressed=True)\
         .select('term')\
-        .sample(1000, seed=42)\
+        .sample(1000, random_state=42)\
         .to_df()['term']
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def specimen():
     """Load the specimen dataset"""
     return stream(SPECIMEN, header=['term', 'freq'], delim='\t', compressed=True)\
         .select('term')\
-        .sample(1000, seed=42)\
+        .sample(1000, random_state=42)\
         .to_df()['term']
 
 @pytest.fixture
@@ -55,5 +55,5 @@ def year():
     """Load the year dataset"""
     return stream(YEAR, header=['term', 'freq'], delim='\t', compressed=True)\
         .select('term')\
-        .sample(1000, seed=42)\
+        .sample(1000, random_state=42)\
         .to_df()['term']
