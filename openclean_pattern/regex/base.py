@@ -25,8 +25,14 @@ from openclean.profiling.pattern.base import Pattern
 class OpencleanPattern(Pattern, metaclass=ABCMeta):
     """Contains PatternElements used inside the Patterns class to store a single row / column pattern"""
 
-    def __init__(self, container):
-        """Initialize the OpencleanPattern class"""
+    def __init__(self, container: Iterable):
+        """Initialize the OpencleanPattern class
+
+        Parameters
+        ----------
+        container: Iterable
+            the base class to store pattern elements in
+        """
         self.container = container
         self.freq = 0
         self.idx = set()
@@ -231,13 +237,20 @@ class SingularRowPattern(OpencleanPattern):
 class SingularColumnPattern(OpencleanPattern):
     """Class to create / store a singular patterns created from a row"""
 
-    def __init__(self):
-        """initializes the class"""
+    def __init__(self, size_coverage: float = 1):
+        """initializes the class
+
+        Parameters
+        ----------
+        size_coverage: float
+            size coverage passed used by the size monitor as threshold
+        """
         container = dict()
         super(SingularColumnPattern, self).__init__(container)
         self.column_min = np.inf
         self.column_max = -np.inf
         self.column_freq = 0
+        self.size_coverage = size_coverage
 
     def update(self, tokens: Token):
         """update the column pattern using the tokens, the list (of OpencleanPattern Elements
@@ -254,7 +267,7 @@ class SingularColumnPattern(OpencleanPattern):
                 raise TypeError("expected: openclean_pattern.tokenize.token.Token, got: {}".format(token.__class__))
 
             if token.regex_type.name not in self.container:
-                self[token.regex_type.name] = PatternElementSizeMonitor().update(token)
+                self[token.regex_type.name] = PatternElementSizeMonitor(threshold=self.size_coverage).update(token)
             else:
                 self[token.regex_type.name].update(token)
 
@@ -305,10 +318,11 @@ class SingularColumnPattern(OpencleanPattern):
 class Patterns(defaultdict, metaclass=ABCMeta):
     """Class to create patterns from tokens"""
 
-    def __init__(self):
+    def __init__(self, size_coverage: float = 1):
         super(Patterns, self).__init__()
         self.global_freq = 0
         self.anoms = set()
+        self.size_coverage = size_coverage
 
     @staticmethod
     def keygen(row: Iterable) -> str:
@@ -345,7 +359,7 @@ class Patterns(defaultdict, metaclass=ABCMeta):
             shares[p] = self[p].freq / self.global_freq
         return shares
 
-    def top(self, n: int = 1, pattern: bool = False) -> Union[str, ]:
+    def top(self, n: int = 1, pattern: bool = False) -> Union[str,]:
         """gets the element type with the n ranked share. Ensure this is computed on the Patterns.condensed() object
 
         Parameters
@@ -415,15 +429,15 @@ class RowPatterns(Patterns):
     """Token type tracker for each distinct pattern that appears in the rows
     """
 
-    def __init__(self):
+    def __init__(self, size_coverage: float = 1):
         """initializes the row object
 
         Parameters
         ----------
-        row :  list of Tokens
-            the list to evaluate the patterns from
+        size_coverage :  float
+            the threshold value for the PatternElementSizeMonitor
         """
-        super(RowPatterns, self).__init__()
+        super(RowPatterns, self).__init__(size_coverage)
 
     def insert(self, row: Iterable[Token]):
         """Inserts a row into the discovered patterns or updates the PatternRow object
@@ -442,7 +456,7 @@ class RowPatterns(Patterns):
         if key not in self:
             self[key] = SingularRowPattern()
             for r in row:
-                self[key].append(PatternElementSizeMonitor().update(r))
+                self[key].append(PatternElementSizeMonitor(threshold=self.size_coverage).update(r))
             self[key].freq += 1
             self[key].idx.add(r.rowidx)
         else:
@@ -519,10 +533,15 @@ class ColumnPatterns(Patterns):
     loaded from the SizeMonitors and condensed into a Regex Expression as a RowPatterns
     """
 
-    def __init__(self):
+    def __init__(self, size_coverage: float = 1):
         """initializes the PatternColumn object
+
+        Parameters
+        ----------
+        size_coverage :  float
+            the threshold value for the PatternElementSizeMonitor
         """
-        super(ColumnPatterns, self).__init__()
+        super(ColumnPatterns, self).__init__(size_coverage)
 
     def insert(self, row: Iterable[Token]):
         """insert the row into the respective method
@@ -538,7 +557,7 @@ class ColumnPatterns(Patterns):
                 raise TypeError("expected: openclean_pattern.tokenize.token.Token, got: {}".format(token.__class__))
 
             if key not in self:
-                self[key] = SingularColumnPattern()
+                self[key] = SingularColumnPattern(self.size_coverage)
 
             self[key].update(token)
 
@@ -626,13 +645,13 @@ class PatternElementSizeMonitor(defaultdict):
         a PatternElemenet. This is done to identify and prevent anomalous values from being introduced during pattern compilation
         """
 
-    def __init__(self, threshold: float = .9):
+    def __init__(self, threshold: float = 1):
         """init the monitor
 
         Parameters
         ----------
-        threshold: int (default: 90%)
-            the proportion of values that is considered non-anomalous
+        threshold: int (default: 100%)
+            the proportion of values that is considered non-anomalous. By default, values of all size will be included in the pattern
         """
         self.default_factory = PatternElementSet
         self.freq = 0
