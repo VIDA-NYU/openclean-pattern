@@ -8,15 +8,17 @@
 """Required packages for install, test, docs, and tests."""
 
 
-import os, re
+import os
+import re
+
 from setuptools import setup, find_packages
 
 # todo: add
 install_requires = [
-    'pandas==1.1.4',
+    'pandas>=1.0.0',
     'datamart_geo==0.2',
     'pygtrie==2.3.3',
-    'openclean-core==0.1.0'
+    'openclean-core'
 ]
 
 # todo: add
@@ -62,7 +64,7 @@ setup(
     description="Library for pattern and anomalous pattern detection",
     long_description=description,
     long_description_content_type='text/x-rst',
-    keywords=['openclean_pattern','pattern detection'],
+    keywords=['openclean_pattern', 'pattern detection'],
     url='https://github.com/VIDA-NYU/openclean-pattern',
     author='Munaf Qazi',
     author_email='munaf.qazi@gmail.com',

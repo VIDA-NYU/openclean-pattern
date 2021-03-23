@@ -1,9 +1,14 @@
 ====================================================
-openclean-pattern - Openclean Pattern Identification
+openclean-pattern - openclean Pattern Identification
 ====================================================
 
 .. image:: https://img.shields.io/badge/License-BSD-green.svg
-    :target: https://github.com/maqzi/openclean/blob/master/LICENSE
+    :target: https://github.com/VIDA-NYU/openclean-pattern/blob/master/LICENSE
+
+
+.. figure:: https://github.com/VIDA-NYU/openclean-pattern/blob/master/docs/graphics/logo.png
+    :align: center
+    :alt: openclean Logo
 
 
 About
@@ -92,6 +97,6 @@ We include several `notebooks <https://github.com/maqzi/openclean/blob/9c6d938c1
 See also:
 =========
 
-* `OpenClean <https://github.com/VIDA-NYU/openclean-core>`__
-* `OpenClean-Notebook <https://github.com/VIDA-NYU/openclean-notebook>`__
+* `openclean-core <https://github.com/VIDA-NYU/openclean-core>`__
+* `openclean-notebook <https://github.com/VIDA-NYU/openclean-notebook>`__
 * `Datamart-Geo <https://gitlab.com/ViDA-NYU/datamart/datamart-geo>`__
