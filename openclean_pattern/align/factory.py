@@ -9,8 +9,6 @@
 
 from openclean_pattern.align.combinatorics import CombAligner, ALIGN_COMB
 from openclean_pattern.align.pad import ALIGN_PAD, Padder
-from openclean_pattern.align.group import Group, COLLECT_GROUP
-from openclean_pattern.align.cluster import Cluster, COLLECT_CLUSTER
 
 
 class AlignerFactory(object):
@@ -33,24 +31,3 @@ class AlignerFactory(object):
             return CombAligner()
 
         raise ValueError('aligner: {} not found'.format(aligner))
-
-
-class CollectorFactory(object):
-    """factory methods to create an collector object
-    """
-
-    @staticmethod
-    def create_collector(collector, **kwargs):
-        """Returns the collector object if the input string matches a collector name
-
-        Parameters
-        ----------
-        collector: str
-            name string of the collector
-        """
-        if collector == COLLECT_GROUP:
-            return Group()
-        elif collector == COLLECT_CLUSTER:
-            return Cluster(**kwargs)
-
-        raise ValueError('collector: {} not found'.format(collector))
