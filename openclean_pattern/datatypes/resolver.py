@@ -89,7 +89,7 @@ class TypeResolver(metaclass=ABCMeta):
         -------
             Token
         """
-        return Token(regex_type=SupportedDataTypes.GAP, size=0, value='', rowidx=rowidx)
+        return Token(regex_type=SupportedDataTypes.GAP, value='', rowidx=rowidx)
 
 
 class DefaultTypeResolver(TypeResolver):
@@ -188,7 +188,7 @@ class BasicTypeResolver(TypeResolver):
                         type = SupportedDataTypes.SPACE_REP
                     else:
                         type = SupportedDataTypes.PUNCTUATION
-                    token = Token(regex_type=type, size=len(token), value=token, rowidx=rowidx)
+                    token = Token(regex_type=type, value=token, rowidx=rowidx)
                     resolved.append(token)
             else:
                 resolved.append(element)
@@ -268,7 +268,6 @@ class AdvancedTypeResolver(TypeResolver, metaclass=ABCMeta):
                         if split == prefix:
                             ctype = self.get_label(split)
                             split_row.append(Token(regex_type=ctype,
-                                                   size=len(split),
                                                    value=split,
                                                    rowidx=rowidx))
                         elif split != '':

@@ -105,7 +105,7 @@ COMPILER_DEFAULT = 'default'
 class DefaultRegexCompiler(RegexCompiler):
     """Compiles the full Regexp using PatternColumns with the top shares"""
 
-    def __init__(self, method='row', per_group='top'):
+    def __init__(self, method='row', per_group='top', size_coverage=1):
         """Initializes the class
 
         Parameters
@@ -114,12 +114,40 @@ class DefaultRegexCompiler(RegexCompiler):
             chooses between row-wise and column-wise aggregations for the compiler
         per_group: str
             selects between whether all group patterns should be returned or just the top one
+        size_coverage: float
+            sets the threshold for sizes to include e.g. in the 11 rows:
+
+            01 / 01 / 2001 => dig / dig / dig
+            31 / 01 / 2002 => dig / dig / dig
+            21 / 01 / 2003 => dig / dig / dig
+            01 / 02 / 2004 => dig / dig / dig
+            23 / 03 / 2015 => dig / dig / dig
+            01 / 01 / 2006 => dig / dig / dig
+            01 / 01 / 2007 => dig / dig / dig
+            6 / 03 / 2012 => dig / dig / dig
+            01 / 01 / 2008 => dig / dig / dig
+            01 / 01 / 2009 => dig / dig / dig
+            11 / 01 / 2010 => dig / dig / dig
+
+            for position 0:
+                dig:{
+                    2:[] <- 91%
+                    1:[] <- 9%
+                }
+
+            if size_coverage = 1 , final patternElement => DIGIT[1-2]
+            if size_coverage = .9 , final patternElement => DIGIT[2-2]
+
+            the compiler incrementally includes all sized values in the final pattern in descending order
+            that add upto the size_coverage. It helps exclude value sizes that appear very rarely
+
         """
         super(DefaultRegexCompiler, self).__init__(per_group=per_group)
 
         if method not in ['row', 'col']:
             raise NotImplementedError("{} not found".format(method))
         self.method = method
+        self.size_coverage = size_coverage
 
     def compile_each(self, group):
         """Accepts individual groups and compiles a majority pooled pattern based on the top share
@@ -150,10 +178,10 @@ class DefaultRegexCompiler(RegexCompiler):
         return condensed
 
     def pattern_generator(self):
-        """returns the pattern generator mathod used.
+        """returns the pattern generator method used.
         Todo: move to a factory class
         """
         if self.method == 'row':
-            return RowPatterns()
+            return RowPatterns(self.size_coverage)
         elif self.method == 'col':
-            return ColumnPatterns()
+            return ColumnPatterns(self.size_coverage)
