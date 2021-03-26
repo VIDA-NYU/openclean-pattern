@@ -6,6 +6,7 @@
 # full license details.
 
 from openclean_pattern.tokenize.base import Tokenizer
+from openclean_pattern.tokenize.token import Token
 from openclean_pattern.datatypes.resolver import DefaultTypeResolver
 from openclean_pattern.datatypes.resolver import TypeResolver
 import re
@@ -95,7 +96,7 @@ class RegexTokenizer(Tokenizer):
             encodings = self.type_resolver.resolve_row(rowidx, value, self._tokenize_value)
             encoded = list()
             for enc in encodings:
-                if isinstance(enc, str):
+                if isinstance(enc, str) and not isinstance(enc, Token):
                     enc = self._tokenize_value(rowidx, enc)
                     for token in enc:
                         encoded.append(token)

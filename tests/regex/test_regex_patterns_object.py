@@ -156,8 +156,8 @@ def test_pattern_without_anomalous_elements(checkintime, specimen):
 
     specimen_truth = ['DIGIT[4-4]', '/', 'DIGIT[2-2]', '/', 'DIGIT[2-2]']
 
-    compiler1 = DefaultRegexCompiler(method='col')
-    compiler2 = DefaultRegexCompiler(method='row')
+    compiler1 = DefaultRegexCompiler(method='col', size_coverage=.9)
+    compiler2 = DefaultRegexCompiler(method='row', size_coverage=.9)
 
     def test(df, compiler, truth):
         collector = Group()
@@ -204,7 +204,7 @@ def test_anomalous_values_in_mismatches(checkintime):
     """
     collector = Group()
     tokenizer = DefaultTokenizer()
-    compiler = DefaultRegexCompiler(method='col')
+    compiler = DefaultRegexCompiler(method='col', size_coverage=.9)
 
     # Get a sample of terms from the column.
     terms = list(checkintime)
