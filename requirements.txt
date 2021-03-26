@@ -1,4 +1,5 @@
 pandas==1.1.4
-datamart_geo==0.2
+datamart_geo
 pygtrie==2.3.3
 openclean-core>=0.1.0
+scikit-bio
