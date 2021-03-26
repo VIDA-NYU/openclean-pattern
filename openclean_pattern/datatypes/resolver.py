@@ -77,13 +77,13 @@ class TypeResolver(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @staticmethod
-    def gap(rowidx):
+    def gap(rowidx = None):
         """returns a gap Token
 
         Parameters
         ----------
         rowidx: int
-            row id
+            row idx - optional
 
         Returns
         -------
