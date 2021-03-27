@@ -11,7 +11,7 @@ from typing import List, Union
 
 from openclean_pattern.regex.base import OpencleanPattern
 from openclean_pattern.tokenize.base import Tokenizer
-from openclean_pattern.tokenize.token import Token
+from openclean.function.token.base import Token
 
 
 class Evaluator(object):

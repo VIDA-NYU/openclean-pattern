@@ -5,22 +5,24 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
+import re
+
+from openclean.function.token.base import Token
 from openclean_pattern.tokenize.base import Tokenizer
-from openclean_pattern.tokenize.token import Token
 from openclean_pattern.datatypes.resolver import DefaultTypeResolver
 from openclean_pattern.datatypes.resolver import TypeResolver
-import re
 
 TOKENIZER_REGEX = 'punc'
 
 
 class RegexTokenizer(Tokenizer):
-    """The RegexTokenizer tokenizes the input list using all punctuation delimiters and keeps them intact by default.
-    It also breaks down the word character '_'. A user is allowed to supply a different regex expression.
-    The encoding method passes the tokenized strings to the underlying type resolver to generate the equivalent
-    internal representation of openclean_pattern.tokenize.token objects.
+    """The RegexTokenizer tokenizes the input list using all punctuation
+    delimiters and keeps them intact by default. It also breaks down the word
+    character '_'. A user is allowed to supply a different regex expression.
+    The encoding method passes the tokenized strings to the underlying type
+    resolver to generate the equivalent internal representation of
+    ``openclean.function.token.base.Token`` objects.
     """
-
     def __init__(self, regex=r"[\w]+|[^\w]", type_resolver=None, abbreviations=False):
         """initializes the tokenizer.
 
@@ -70,9 +72,9 @@ class RegexTokenizer(Tokenizer):
 
         return tuple([item for sublist in [re.split('(_)', j) for j in post_regex] for item in sublist])
 
-    def _encode_value(self, rowidx, value):
-        """ Pass the token rows to the underlying TypeResolver to convert the tokens to their
-        equivalent internal regex representations
+    def _encode_value(self, rowidx: int, value: str) -> Token:
+        """Pass the token rows to the underlying TypeResolver to convert the
+        tokens to their equivalent internal regex representations.
 
         Parameters
         ----------
@@ -83,7 +85,7 @@ class RegexTokenizer(Tokenizer):
 
         Returns
         -------
-            tuple of openclean_pattern.tokenize.tokens
+        tuple of openclean.function.token.base.Token
         """
         if self.type_resolver is not None and not isinstance(self.type_resolver, TypeResolver):
             raise RuntimeError("type_resolver: {} not of type: DataTypeResolver".format(type(self.type_resolver)))
@@ -112,9 +114,9 @@ TOKENIZER_DEFAULT = 'default'
 
 
 class DefaultTokenizer(RegexTokenizer):
-    """Default tokenizer class that splits on all punctuation and only encodes values into basic types. More aptly,
-    it is a use case of the RegexTokenizer"""
-
+    """Default tokenizer class that splits on all punctuation and only encodes
+    values into basic types. More aptly, it is a use case of the RegexTokenizer.
+    """
     def __init__(self):
         """initializes the tokenizer with the DefaultTpeResolver without any interceptors"""
         super(DefaultTokenizer, self).__init__(type_resolver=DefaultTypeResolver())

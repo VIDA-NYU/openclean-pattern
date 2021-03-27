@@ -1,4 +1,4 @@
 pandas>=1.0.0
 datamart_geo
 pygtrie==2.3.3
-openclean-core
+openclean-core>=0.3.0

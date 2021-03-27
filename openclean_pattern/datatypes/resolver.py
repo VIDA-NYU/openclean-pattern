@@ -8,12 +8,15 @@
 """Classes responsible for resolving various non-basic and basic data types into Tokens.
 """
 
-import pandas as pd, os, datamart_geo, re
+import datamart_geo
+import pandas as pd
+import os
+import re
 import sqlite3
 
 from openclean_pattern.tokenize.prefix_tree import PrefixTree
 from openclean_pattern.datatypes.base import SupportedDataTypes
-from openclean_pattern.tokenize.token import Token
+from openclean.function.token.base import Token
 
 from abc import abstractmethod, ABCMeta
 
@@ -28,7 +31,7 @@ class TypeResolver(metaclass=ABCMeta):
 
         Parameters
         ----------
-        column: list of lists/tuples of [str, openclean_pattern.tokenize.token.Tokens]
+        column: list of lists/tuples of [str, openclean.function.token.base.Tokens]
             list of column values
         tokenizer: openclean_pattern.tokenize.base.Tokenizer
             Tokenizer to use as part of the encoding
@@ -48,8 +51,8 @@ class TypeResolver(metaclass=ABCMeta):
 
     @abstractmethod
     def resolve_row(self, rowidx, row, tokenizer):
-        """returns the basic / non-basic data type augmented row. this can be a combination of str
-        and openclean_pattern.tokenize.token.Tokens
+        """returns the basic / non-basic data type augmented row. this can be a
+        combination of str and openclean.function.token.base.Token's.
 
         Parameters
         ----------
@@ -62,7 +65,7 @@ class TypeResolver(metaclass=ABCMeta):
 
         Returns
         -------
-            tuple[openclean_pattern.tokenize.token.Token]
+        tuple[openclean.function.token.base.Token]
         """
         raise NotImplementedError()
 
@@ -87,9 +90,9 @@ class TypeResolver(metaclass=ABCMeta):
 
         Returns
         -------
-            Token
+        Token
         """
-        return Token(regex_type=SupportedDataTypes.GAP, value='', rowidx=rowidx)
+        return Token(token_type=SupportedDataTypes.GAP, value='', rowidx=rowidx)
 
 
 class DefaultTypeResolver(TypeResolver):
@@ -101,7 +104,7 @@ class DefaultTypeResolver(TypeResolver):
 
     def __init__(self, interceptors=None):
         """ Initializes the DefaultTypeResolver.
-        
+
         Parameters
         ----------
             interceptors: List[TypeResolver]
@@ -139,13 +142,13 @@ class DefaultTypeResolver(TypeResolver):
 
 class BasicTypeResolver(TypeResolver):
     """ Class to resolve to the supported basic types
-            STRING = STRING_REP = '\W+'
+            STRING = STRING_REP = '\\W+'
             ALPHA = ALPHA_REP = 'ALPHA'
             ALPHANUM = ALPHANUM_REP = 'ALPHANUM'
             DIGIT = DIGIT_REP = 'NUMERIC'
             PUNCTUATION = PUNCTUATION_REP = 'PUNC'
             GAP = 'G'
-            SPACE_REP = '\S'
+            SPACE_REP = '\\S'
             OPTIONAL_REP = '?'
     """
 
@@ -163,7 +166,7 @@ class BasicTypeResolver(TypeResolver):
 
         Returns
         -------
-            tuple[openclean_pattern.tokenize.token.Token]
+        tuple[openclean.function.token.base.Token]
         """
         if isinstance(row, str):
             row = [row]
@@ -188,7 +191,7 @@ class BasicTypeResolver(TypeResolver):
                         type = SupportedDataTypes.SPACE_REP
                     else:
                         type = SupportedDataTypes.PUNCTUATION
-                    token = Token(regex_type=type, value=token, rowidx=rowidx)
+                    token = Token(token_type=type, value=token, rowidx=rowidx)
                     resolved.append(token)
             else:
                 resolved.append(element)
@@ -236,7 +239,7 @@ class AdvancedTypeResolver(TypeResolver, metaclass=ABCMeta):
 
         Returns
         -------
-            tuple[str, openclean_pattern.tokenize.token.Token]
+        tuple[str, openclean.function.token.base.Token]
         """
         # todo: support ignoring punctuation when extracting prefixes from row
         # convert string to list
@@ -267,9 +270,7 @@ class AdvancedTypeResolver(TypeResolver, metaclass=ABCMeta):
                     for split in splits:
                         if split == prefix:
                             ctype = self.get_label(split)
-                            split_row.append(Token(regex_type=ctype,
-                                                   value=split,
-                                                   rowidx=rowidx))
+                            split_row.append(Token(token_type=ctype, value=split, rowidx=rowidx))
                         elif split != '':
                             split_row.append(split)
                     prefix_processed_row.append(split_row)

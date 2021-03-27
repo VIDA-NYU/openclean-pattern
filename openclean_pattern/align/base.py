@@ -10,7 +10,7 @@ from abc import ABCMeta, abstractmethod
 
 
 class Aligner(metaclass=ABCMeta):
-    """aligns the token objects and returns groups of aligned token groups"""
+    """Aligns the token objects and returns groups of aligned token groups"""
 
     def __init__(self, alignment_type):
         """intializes the Aligner object
@@ -24,7 +24,9 @@ class Aligner(metaclass=ABCMeta):
 
     @abstractmethod
     def align(self, column, groups):
-        """Takes in the column and the groups and returns an aligned version of each group by adding Gap tokens to each row.
+        """Takes in the column and the groups and returns an aligned version of
+        each group by adding Gap tokens to each row.
+
         A list[Tuple(Tokens)] is returned with the aligned values
 
         Parameters
@@ -37,7 +39,7 @@ class Aligner(metaclass=ABCMeta):
         -------
             list[Tuple(Tokens)]
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
 
 class Collector(metaclass=ABCMeta):
@@ -55,18 +57,20 @@ class Collector(metaclass=ABCMeta):
 
     @abstractmethod
     def collect(self, column):
-        """the collect method takes in a list of openclean_pattern.tokenize.token.Tokens and aligns them to minimize
-        the distance between that row and the others. The returned object is a dict of lists with each inner list
-        representing a group having the same no. of tokens
+        """The collect method takes in a list of openclean.function.token.base.Token's
+        and aligns them to minimize the distance between that row and the others.
+        The returned object is a dict of lists with each inner list representing
+        a group having the same no. of tokens.
 
         Parameters
         ----------
-        column: list of tuple[openclean_pattern.tokenize.token.Token]
+        column: list of iterable[openclean.function.token.base.Token]
             the column to align
 
         Returns
         -------
-             a dict of lists with key 'n' representing the cluster and each inner list representing row_indices of groups
-             with n tokens / row_index of part of the cluster
-       """
-        raise NotImplementedError()
+        a dict of lists with key 'n' representing the cluster and each inner
+        list representing row_indices of groups with n tokens / row_index of
+        part of the cluster.
+        """
+        raise NotImplementedError()  # pragma: no cover

@@ -5,7 +5,8 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""the RegexCompiler class evaluates a RegexPattern from groups of openclean_pattern.tokenize.token.Tokens"""
+"""The RegexCompiler class evaluates a RegexPattern from groups of openclean.function.token.base.Token's
+"""
 
 from abc import ABCMeta, abstractmethod
 from openclean_pattern.regex.base import ColumnPatterns, RowPatterns
@@ -35,14 +36,14 @@ class RegexCompiler(metaclass=ABCMeta):
         Accepts individual groups and compiles the pattern
         Parameters
         ----------
-        group :  List[List[openclean_pattern.tokenize.token.Tokens]]
+        group :  List[List[openclean.function.token.base.Token]]
             tokenized rows
 
         Returns
         -------
             PatternRows
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def compile(self, tokenized_column, groups):
         """Accepts the tokenized rows and a dict of group indices and returns the patterns per group along
@@ -50,7 +51,7 @@ class RegexCompiler(metaclass=ABCMeta):
 
         Parameters
         ----------
-        tokenized_column : List[Tuple[openclean_pattern.tokenize.token.Tokens]]
+        tokenized_column : List[Tuple[openclean.function.token.base.Tokens]]
             tokenized rows
         groups : Dict[int:List]
             the dict with group label/cluster/size : list of rowidxs
@@ -72,7 +73,7 @@ class RegexCompiler(metaclass=ABCMeta):
 
         Parameters
         ----------
-        tokenized_column : List[Tuple[openclean_pattern.tokenize.token.Tokens]]
+        tokenized_column : List[Tuple[openclean.function.token.base.Tokens]]
             tokenized rows
         patterns : List
             the list of acceptable patterns
@@ -154,7 +155,7 @@ class DefaultRegexCompiler(RegexCompiler):
 
         Parameters
         ----------
-        group :  List[List[openclean_pattern.tokenize.token.Token]]
+        group :  List[List[openclean.function.token.base.Token]]
             tokenized rows
 
         Returns
@@ -165,8 +166,8 @@ class DefaultRegexCompiler(RegexCompiler):
         for row in group:
             patterns.insert(row)
 
-        # incase the patterns are calculated differently from the base row calculation method, the condense method
-        # converts the format
+        # Incase the patterns are calculated differently from the base row
+        # calculation method, the condense method converts the format.
         condensed = patterns.condense()
 
         if self.per_group == 'top':

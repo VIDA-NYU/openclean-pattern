@@ -8,14 +8,15 @@
 """unit tests for patterns class"""
 
 
+from openclean_pattern.align.group import Group
+from openclean_pattern.datatypes.base import SupportedDataTypes as DT
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.regex.base import SingularRowPattern, PatternElement, PatternElementSizeMonitor
-from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.tokenize.regex import DefaultTokenizer
-from openclean_pattern.align.group import Group
 
 ROWS = [['32A West Broadway 10007'],
         ['54E East Village 10003']]
+
 
 def test_patterns_object(business):
     compiler = DefaultRegexCompiler()
@@ -29,11 +30,10 @@ def test_patterns_object(business):
 
     assert len(patterns[7]) == 1
     for k, pat in patterns[7].items():
-        assert pat.idx == {1,4,6,7,10,11,13,15}
-
+        assert pat.idx == {1, 4, 6, 7, 10, 11, 13, 15}
 
     anomalies = compiler.mismatches(tokenized, patterns[7].top(pattern=True))
-    assert list(business.loc[anomalies,'Address '].index) == [0, 2, 3, 5, 8, 9, 12, 14, 16, 17, 18, 19]
+    assert list(business.loc[anomalies, 'Address '].index) == [0, 2, 3, 5, 8, 9, 12, 14, 16, 17, 18, 19]
 
 
 def test_patterns_insert():
@@ -43,19 +43,19 @@ def test_patterns_insert():
     pattern = SingularRowPattern()
     [pattern.container.append(PatternElement(r)) for r in tokenized[0]]
 
-    assert pattern[0].element_type == SupportedDataTypes.ALPHANUM.name \
+    assert pattern[0].element_type == DT.ALPHANUM \
            and pattern[0].partial_regex == '32a'
-    assert pattern[1].element_type == SupportedDataTypes.SPACE_REP.name \
+    assert pattern[1].element_type == DT.SPACE_REP \
            and pattern[1].partial_regex == ' '
-    assert pattern[2].element_type == SupportedDataTypes.ALPHA.name \
+    assert pattern[2].element_type == DT.ALPHA \
            and pattern[2].partial_regex == 'west'
-    assert pattern[3].element_type == SupportedDataTypes.SPACE_REP.name \
+    assert pattern[3].element_type == DT.SPACE_REP \
            and pattern[3].partial_regex == ' '
-    assert pattern[4].element_type == SupportedDataTypes.ALPHA.name \
+    assert pattern[4].element_type == DT.ALPHA \
            and pattern[4].partial_regex == 'broadway'
-    assert pattern[5].element_type == SupportedDataTypes.SPACE_REP.name \
+    assert pattern[5].element_type == DT.SPACE_REP \
            and pattern[5].partial_regex == ' '
-    assert pattern[6].element_type == SupportedDataTypes.DIGIT.name \
+    assert pattern[6].element_type == DT.DIGIT \
            and pattern[6].partial_regex == '10007'
 
 
@@ -71,27 +71,27 @@ def test_patterns_update():
         else:
             pattern.update(row)
 
-    assert pattern[0].element_type == SupportedDataTypes.ALPHANUM.name \
+    assert pattern[0].element_type == DT.ALPHANUM \
            and pattern[0].partial_regex == 'XXX'
-    assert pattern[1].element_type == SupportedDataTypes.SPACE_REP.name \
+    assert pattern[1].element_type == DT.SPACE_REP \
            and pattern[1].partial_regex == ' '
-    assert pattern[2].element_type == SupportedDataTypes.ALPHA.name \
+    assert pattern[2].element_type == DT.ALPHA \
            and pattern[2].partial_regex == 'XXst'
-    assert pattern[3].element_type == SupportedDataTypes.SPACE_REP.name \
+    assert pattern[3].element_type == DT.SPACE_REP \
            and pattern[3].partial_regex == ' '
-    assert pattern[4].element_type == SupportedDataTypes.ALPHA.name \
+    assert pattern[4].element_type == DT.ALPHA \
            and pattern[4].partial_regex == 'XXXXXXXX'
-    assert pattern[5].element_type == SupportedDataTypes.SPACE_REP.name \
+    assert pattern[5].element_type == DT.SPACE_REP \
            and pattern[5].partial_regex == ' '
-    assert pattern[6].element_type == SupportedDataTypes.DIGIT.name \
+    assert pattern[6].element_type == DT.DIGIT \
            and pattern[6].partial_regex == '1000X'
 
 
 def test_pattern_element_set(business, year):
     tokenizer = DefaultTokenizer()
     tokenized = tokenizer.encode(business['Address '])
-    tokenized = [tokenized[0][4], tokenized[0][6], tokenized[1][2], tokenized[1][4], tokenized[1][6]] # mixing matching a bunch of ALPHAs
-    for i, t in enumerate(tokenized): # updating row idx for the synthetic data
+    tokenized = [tokenized[0][4], tokenized[0][6], tokenized[1][2], tokenized[1][4], tokenized[1][6]]  # mixing matching a bunch of ALPHAs  # noqa: E501
+    for i, t in enumerate(tokenized):  # updating row idx for the synthetic data
         t.rowidx = i
 
     pet = PatternElementSizeMonitor()
@@ -101,13 +101,13 @@ def test_pattern_element_set(business, year):
     pe = pet.load()
 
     assert isinstance(pe, PatternElement)
-    assert pe.idx == set([0,1,2,3,4])
-    assert pe.element_type == 'ALPHA'
+    assert pe.idx == set([0, 1, 2, 3, 4])
+    assert pe.element_type == DT.ALPHA
     assert pe.len_max == 5
     assert pe.len_min == 1
     assert len(pe.values) > 0
     for i in pe.values:
-        assert i in ['st','ne','w','ave','davis']
+        assert i in ['st', 'ne', 'w', 'ave', 'davis']
 
     tokenized = tokenizer.encode(year)
     months = [t[0] for t in tokenized]
@@ -117,10 +117,10 @@ def test_pattern_element_set(business, year):
 
     pe = pet.load()
     assert isinstance(pe, PatternElement)
-    assert pe.element_type == 'ALPHA'
+    assert pe.element_type == DT.ALPHA
     assert len(pe.values) > 0
-    for i in pe.values: #verify values are accessible
-        assert i in ['july','april']
+    for i in pe.values:  # verify values are accessible
+        assert i in ['july', 'april']
 
 
 def test_pattern_without_anomalous_elements(checkintime, specimen):
@@ -147,14 +147,32 @@ def test_pattern_without_anomalous_elements(checkintime, specimen):
 
         The final Patten element ~ ALPHA (3-3) instead of ALPHA(2-3)
     """
-    # The dataset contains 9 anomalous values for the 5th position (year) thus the pattern element = DIGIT[4-5] instead of DIGIT[4-4]
-    # without anomaly removal = ['DIGIT[2-2]', '/', 'DIGIT[2-2]', '/', 'DIGIT[4-5]', 'SPACE_REP[1-1]', 'DIGIT[2-2]', ':', 'DIGIT[2-2]', ':',
-    #  'DIGIT[2-2]', 'SPACE_REP[1-1]', 'ALPHA[2-2]', 'SPACE_REP[1-1]', '+', 'DIGIT[4-4]']
+    # The dataset contains 9 anomalous values for the 5th position (year) thus
+    # the pattern element = DIGIT[4-5] instead of DIGIT[4-4] without anomaly
+    # removal = ['DIGIT[2-2]', '/', 'DIGIT[2-2]', '/', 'DIGIT[4-5]', 'SPACE_REP[1-1]',
+    #   'DIGIT[2-2]', ':', 'DIGIT[2-2]', ':', 'DIGIT[2-2]', 'SPACE_REP[1-1]',
+    #   'ALPHA[2-2]', 'SPACE_REP[1-1]', '+', 'DIGIT[4-4]']
 
-    checkin_truth = ['DIGIT[2-2]', '/', 'DIGIT[2-2]', '/', 'DIGIT[4-4]', 'SPACE_REP[1-1]', 'DIGIT[2-2]', ':', 'DIGIT[2-2]', ':',
-     'DIGIT[2-2]', 'SPACE_REP[1-1]', 'ALPHA[2-2]', 'SPACE_REP[1-1]', '+', 'DIGIT[4-4]']
+    checkin_truth = [
+        '{}[2-2]'.format(DT.DIGIT),
+        '/',
+        '{}[2-2]'.format(DT.DIGIT),
+        '/',
+        '{}[4-4]'.format(DT.DIGIT),
+        '{}[1-1]'.format(DT.SPACE_REP),
+        '{}[2-2]'.format(DT.DIGIT),
+        ':',
+        '{}[2-2]'.format(DT.DIGIT),
+        ':',
+        '{}[2-2]'.format(DT.DIGIT),
+        '{}[1-1]'.format(DT.SPACE_REP),
+        'ALPHA[2-2]',
+        '{}[1-1]'.format(DT.SPACE_REP),
+        '+',
+        '{}[4-4]'.format(DT.DIGIT)
+    ]
 
-    specimen_truth = ['DIGIT[4-4]', '/', 'DIGIT[2-2]', '/', 'DIGIT[2-2]']
+    specimen_truth = ['{}[4-4]'.format(DT.DIGIT), '/', '{}[2-2]'.format(DT.DIGIT), '/', '{}[2-2]'.format(DT.DIGIT)]
 
     compiler1 = DefaultRegexCompiler(method='col', size_coverage=.9)
     compiler2 = DefaultRegexCompiler(method='row', size_coverage=.9)
@@ -232,6 +250,14 @@ def test_anomalous_values_in_mismatches(checkintime):
         if not pattern.compare(term, tokenizer):
             mismatches.append(term)
 
-    assert mismatches == ['04/22/43971 02:40:00 AM +0000', '01/11/43972 04:40:00 PM +0000', '10/03/43971 04:40:00 PM +0000',
-     '04/20/43971 12:40:00 AM +0000', '05/08/43971 06:40:00 PM +0000', '08/29/43971 06:40:00 AM +0000',
-     '08/27/43971 04:40:00 AM +0000', '10/03/43971 12:00:00 AM +0000', '10/16/43971 09:20:00 PM +0000']
+    assert mismatches == [
+        '04/22/43971 02:40:00 AM +0000',
+        '01/11/43972 04:40:00 PM +0000',
+        '10/03/43971 04:40:00 PM +0000',
+        '04/20/43971 12:40:00 AM +0000',
+        '05/08/43971 06:40:00 PM +0000',
+        '08/29/43971 06:40:00 AM +0000',
+        '08/27/43971 04:40:00 AM +0000',
+        '10/03/43971 12:00:00 AM +0000',
+        '10/16/43971 09:20:00 PM +0000'
+    ]

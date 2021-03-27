@@ -16,7 +16,7 @@ import numpy as np
 from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.function.value import IsMatch
 from openclean_pattern.tokenize.base import Tokenizer
-from openclean_pattern.tokenize.token import Token
+from openclean.function.token.base import Token
 from openclean_pattern.utils.utils import StringComparator
 
 from openclean.profiling.pattern.base import Pattern
@@ -173,7 +173,7 @@ class SingularRowPattern(OpencleanPattern):
 
         Parameters
         ----------
-        value : str or list of openclean_pattern.tokenize.token.Token
+        value : str or list of openclean.function.token.base.Token
             The value to match with the pattern
         tokenizer: openclean_pattern.tokenize.base.Tokenizer, default=None
             Tokenizer that was used when generating the pattern.
@@ -204,11 +204,11 @@ class SingularRowPattern(OpencleanPattern):
             if not isinstance(p, PatternElement):
                 raise ValueError("Invalid PatternElement")
 
-            if p.element_type != v.regex_type.name:
+            if p.element_type != v.regex_type:
                 if p.element_type == SupportedDataTypes.ALPHANUM and \
-                        (v.regex_type.name in [SupportedDataTypes.ALPHA, SupportedDataTypes.DIGIT]):
+                        (v.regex_type in [SupportedDataTypes.ALPHA, SupportedDataTypes.DIGIT]):
                     continue
-                elif p.element_type == SupportedDataTypes.GAP and v.regex_type.name == SupportedDataTypes.GAP:
+                elif p.element_type == SupportedDataTypes.GAP and v.regex_type == SupportedDataTypes.GAP:
                     continue
                 return False
 
@@ -264,12 +264,12 @@ class SingularColumnPattern(OpencleanPattern):
             tokens = [tokens]
         for token in tokens:
             if not isinstance(token, Token):
-                raise TypeError("expected: openclean_pattern.tokenize.token.Token, got: {}".format(token.__class__))
+                raise TypeError("expected: openclean.function.token.base.Token, got: {}".format(token.__class__))
 
-            if token.regex_type.name not in self.container:
-                self[token.regex_type.name] = PatternElementSizeMonitor(threshold=self.size_coverage).update(token)
+            if token.regex_type not in self.container:
+                self[token.regex_type] = PatternElementSizeMonitor(threshold=self.size_coverage).update(token)
             else:
-                self[token.regex_type.name].update(token)
+                self[token.regex_type].update(token)
 
         # Profile of all the tokens that went into creating this pattern,
         # not just the ones that created the final pattern element
@@ -359,7 +359,7 @@ class Patterns(defaultdict, metaclass=ABCMeta):
             shares[p] = self[p].freq / self.global_freq
         return shares
 
-    def top(self, n: int = 1, pattern: bool = False) -> Union[str,]:
+    def top(self, n: int = 1, pattern: bool = False) -> Union[str, Pattern]:
         """gets the element type with the n ranked share. Ensure this is computed on the Patterns.condensed() object
 
         Parameters
@@ -449,7 +449,7 @@ class RowPatterns(Patterns):
 
         self.global_freq += 1
         types = list()
-        [types.append(i.regex_type.name) for i in row]
+        [types.append(i.regex_type) for i in row]
 
         key = Patterns.keygen(types)
 
@@ -554,7 +554,7 @@ class ColumnPatterns(Patterns):
         self.global_freq += 1
         for key, token in enumerate(row):
             if not isinstance(token, Token):
-                raise TypeError("expected: openclean_pattern.tokenize.token.Token, got: {}".format(token.__class__))
+                raise TypeError("expected: openclean.function.token.base.Token, got: {}".format(token.__class__))
 
             if key not in self:
                 self[key] = SingularColumnPattern(self.size_coverage)
@@ -640,10 +640,12 @@ class PatternElementSet(object):
 
 
 class PatternElementSizeMonitor(defaultdict):
-    """Keeps track of all the pattern element sets. A set is one with the same regex type tokens of the same
-       size. e.g. 4 digit numbers will be one set and 5 digit numbers another. Only the biggest sets are compiled into
-        a PatternElemenet. This is done to identify and prevent anomalous values from being introduced during pattern compilation
-        """
+    """Keeps track of all the pattern element sets. A set is one with the same
+    regex type tokens of the same size. e.g. 4 digit numbers will be one set
+    and 5 digit numbers another. Only the biggest sets are compiled into a
+    PatternElemenet. This is done to identify and prevent anomalous values from
+    being introduced during pattern compilation.
+    """
 
     def __init__(self, threshold: float = 1):
         """init the monitor
@@ -651,7 +653,8 @@ class PatternElementSizeMonitor(defaultdict):
         Parameters
         ----------
         threshold: int (default: 100%)
-            the proportion of values that is considered non-anomalous. By default, values of all size will be included in the pattern
+            the proportion of values that is considered non-anomalous. By default,
+            values of all size will be included in the pattern.
         """
         self.default_factory = PatternElementSet
         self.freq = 0
@@ -745,7 +748,6 @@ class PatternElement(object):
             the token used to create this PatternElement object
         """
         self.element_type = None  # type of regex element
-        self.regex = None  # regex representation
         self.len_min = np.inf  # min len
         self.len_max = -np.inf  # max len
         self.values = set()
@@ -804,11 +806,10 @@ class PatternElement(object):
         s : PatternElementSet
             the set to use as the init
         """
-        if self.element_type is not None or self.regex is not None:
+        if self.element_type is not None:
             raise Exception("use from_set to create new PatternElements. To update an existing one, use 'update'")
 
-        self.element_type = s.regex_type.name  # type of regex element
-        self.regex = s.regex_type.value  # regex representation
+        self.element_type = s.regex_type  # type of regex element
         self.update(s)
 
     def __str__(self):
@@ -818,10 +819,10 @@ class PatternElement(object):
         -------
             str
         """
-        if self.element_type in [SupportedDataTypes.PUNCTUATION.name, SupportedDataTypes.SPACE_REP.name]:
-            return '{}({})'.format(self.regex, ''.join(self.punc_list))
+        if self.element_type in [SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP]:
+            return '{}({})'.format(self.element_type, ''.join(self.punc_list))
 
-        pattern = self.regex if self.partial_ambiguous else self.partial_regex
+        pattern = self.element_type if self.partial_ambiguous else self.partial_regex
         return '{}({}-{})'.format(pattern, self.len_min, self.len_max)
 
     def __repr__(self):
@@ -829,7 +830,6 @@ class PatternElement(object):
 
     def __eq__(self, other):
         return self.element_type == other.element_type and \
-               self.regex == other.regex and \
                self.len_min == other.len_min and \
                self.len_max == other.len_max and \
                self.idx == other.idx and \

@@ -7,9 +7,10 @@
 
 """unit tests for DefaultRegexCompiler class"""
 
+from openclean_pattern.align.group import Group
+from openclean_pattern.datatypes.base import SupportedDataTypes as DT
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.tokenize.regex import DefaultTokenizer
-from openclean_pattern.align.group import Group
 
 
 def test_default_regex_compiler(business):
@@ -23,9 +24,11 @@ def test_default_regex_compiler(business):
     patterns = compiler.compile(tokenized, groups)
 
     assert len(patterns) == 4
-    types = [['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA'],
-            ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA'],
-            ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']]
+    types = [
+        [DT.DIGIT, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA],
+        [DT.DIGIT, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA],
+        [DT.DIGIT, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA]
+    ]
     for i, t in zip([9, 5, 7], types):
         for element, truth in zip(patterns[i].top(pattern=True).container, t):
             assert element.element_type == truth
@@ -48,14 +51,15 @@ def test_default_regex_compiler_all(business):
     assert len(patterns[5]) == 2
 
     truth = [
-        'DIGIT SPACE_REP ALPHANUM SPACE_REP ALPHA SPACE_REP ALPHA',
-        'DIGIT SPACE_REP ALPHA SPACE_REP ALPHA SPACE_REP ALPHA',
-        'DIGIT SPACE_REP ALPHA SPACE_REP ALPHANUM SPACE_REP ALPHA',
-        'ALPHA SPACE_REP ALPHA SPACE_REP ALPHA SPACE_REP ALPHA'
+        ' '.join([DT.DIGIT, DT.SPACE_REP, DT.ALPHANUM, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA]),
+        ' '.join([DT.DIGIT, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA]),
+        ' '.join([DT.DIGIT, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHANUM, DT.SPACE_REP, DT.ALPHA]),
+        ' '.join([DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA])
     ]
 
     for t, key in zip(truth, patterns[7]):
         assert key == t
+
 
 def test_default_regex_anomaly(business):
     compiler = DefaultRegexCompiler()
@@ -67,9 +71,9 @@ def test_default_regex_anomaly(business):
 
     patterns = compiler.compile(tokenized, groups)
 
-    types = [['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA'],
-             ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA'],
-             ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']]
+    types = [[DT.DIGIT, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA],
+             [DT.DIGIT, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA],
+             [DT.DIGIT, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA]]
     for i, t in zip([9, 5, 7], types):
         for element, truth in zip(patterns[i].top(pattern=True).container, t):
             assert element.element_type == truth
@@ -80,5 +84,5 @@ def test_default_regex_anomaly(business):
 
     mismatches = compiler.mismatches(tokenized, patterns=match_patterns)
     mismatched_rows = business.loc[mismatches, 'Address ']
-    assert len(mismatched_rows) == 7 # except row#14, the other mismatches are e.g. those that had 14th (alphanum) instead of an alpha at position 2
-    assert 14 in mismatched_rows.index # index # 14 = 'ATTN HEATHER J HANSEN' which shouldnt match the pattern.
+    assert len(mismatched_rows) == 7  # except row#14, the other mismatches are e.g. those that had 14th (alphanum) instead of an alpha at position 2  # noqa: E501
+    assert 14 in mismatched_rows.index  # index # 14 = 'ATTN HEATHER J HANSEN' which shouldnt match the pattern.

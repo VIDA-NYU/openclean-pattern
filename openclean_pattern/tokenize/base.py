@@ -66,7 +66,7 @@ class Tokenizer(object, metaclass=ABCMeta):
 
         Returns
         -------
-            tuple of openclean_pattern.tokenize.tokens
+        tuple of openclean.function.token.base.Token
         """
         raise NotImplementedError()
 
