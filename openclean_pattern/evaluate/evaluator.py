@@ -9,8 +9,8 @@
 
 from typing import List, Union
 
+from openclean.function.token.base import Tokenizer
 from openclean_pattern.regex.base import OpencleanPattern
-from openclean_pattern.tokenize.base import Tokenizer
 from openclean.function.token.base import Token
 
 
@@ -27,7 +27,7 @@ class Evaluator(object):
             The pattern to evaluate against
         value : str or list[Token]
             The str value or tokens of a single row to match with the pattern
-        tokenizer: openclean_pattern.tokenize.base.Tokenizer
+        tokenizer: openclean.function.token.base.Tokenizer
             a OpencleanPatternFinder object containing the type resolvers and tokenizers used to create
             the original pattern
 

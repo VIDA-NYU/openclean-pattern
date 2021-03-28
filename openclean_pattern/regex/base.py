@@ -13,9 +13,9 @@ from typing import List, Optional, Union, Iterable, Dict
 
 import numpy as np
 
+from openclean.function.token.base import Tokenizer
 from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.function.value import IsMatch
-from openclean_pattern.tokenize.base import Tokenizer
 from openclean.function.token.base import Token
 from openclean_pattern.utils.utils import StringComparator
 
@@ -47,7 +47,7 @@ class OpencleanPattern(Pattern, metaclass=ABCMeta):
         ----------
         value : str
             The value to match with the pattern
-        tokenizer: openclean_pattern.tokenize.base.Tokenizer
+        tokenizer: openclean.function.token.base.Tokenizer
             Tokenizer that was used when generating the pattern.
         """
         raise NotImplementedError()
@@ -175,7 +175,7 @@ class SingularRowPattern(OpencleanPattern):
         ----------
         value : str or list of openclean.function.token.base.Token
             The value to match with the pattern
-        tokenizer: openclean_pattern.tokenize.base.Tokenizer, default=None
+        tokenizer: openclean.function.token.base.Tokenizer, default=None
             Tokenizer that was used when generating the pattern.
 
         Returns
@@ -301,7 +301,7 @@ class SingularColumnPattern(OpencleanPattern):
         ----------
         value: list[Tokens]
             value / tokens to compare with the pattern
-        tokenizer: openclean_pattern.tokenize.base.Tokenizer
+        tokenizer: openclean.function.token.base.Tokenizer
             Tokenizer that was used when generating the pattern.
         """
         raise NotImplementedError()

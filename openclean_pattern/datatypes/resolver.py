@@ -33,7 +33,7 @@ class TypeResolver(metaclass=ABCMeta):
         ----------
         column: list of lists/tuples of [str, openclean.function.token.base.Tokens]
             list of column values
-        tokenizer: openclean_pattern.tokenize.base.Tokenizer
+        tokenizer: openclean.function.token.base.Tokenizer
             Tokenizer to use as part of the encoding
 
         Returns

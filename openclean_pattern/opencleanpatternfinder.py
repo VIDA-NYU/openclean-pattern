@@ -7,9 +7,10 @@
 
 """OpencleanPattern Finder class to identify regex patterns, find mismatches and evaluate patterns on new columns"""
 
+from openclean.function.token.base import Tokenizer
+
 from openclean_pattern.tokenize.factory import TokenizerFactory
 from openclean_pattern.tokenize.regex import TOKENIZER_DEFAULT
-from openclean_pattern.tokenize.base import Tokenizer
 
 from openclean_pattern.align.factory import AlignerFactory, CollectorFactory
 from openclean_pattern.align.group import COLLECT_GROUP
@@ -150,7 +151,7 @@ class OpencleanPatternFinder(PatternFinder):
 
         Returns
         -------
-        openclean_pattern.tokenize.base.Tokenizer
+        openclean.function.token.base.Tokenizer
         """
         return self._tokenizer
 
