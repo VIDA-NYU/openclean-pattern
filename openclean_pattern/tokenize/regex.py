@@ -5,12 +5,13 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
+from typing import Callable, List, Optional
+
 import re
 
-from openclean.function.token.base import Token
-from openclean_pattern.tokenize.base import Tokenizer
-from openclean_pattern.datatypes.resolver import DefaultTypeResolver
-from openclean_pattern.datatypes.resolver import TypeResolver
+from openclean.data.types import Scalar
+from openclean.function.token.base import Token, Tokenizer
+from openclean_pattern.datatypes.resolver import DefaultTypeResolver, TypeResolver
 
 TOKENIZER_REGEX = 'punc'
 
@@ -23,8 +24,12 @@ class RegexTokenizer(Tokenizer):
     resolver to generate the equivalent internal representation of
     ``openclean.function.token.base.Token`` objects.
     """
-    def __init__(self, regex=r"[\w]+|[^\w]", type_resolver=None, abbreviations=False):
-        """initializes the tokenizer.
+    def __init__(
+        self, regex: Optional[str] = r"[\w]+|[^\w]",
+        type_resolver: Optional[TypeResolver] = None,
+        abbreviations: Optional[bool] = False, case: Optional[Callable] = str.lower
+    ):
+        """Initializes the tokenizer.
 
         Parameters
         ----------
@@ -36,17 +41,22 @@ class RegexTokenizer(Tokenizer):
             by default, the content string is tokenized on all punctuation. If True, dots
             will not be included as a tokenizing delimiter as they represent abbreviations. A user
             provided regex will take precedence over the abbreviations even if it is set to True
+        case: Callable (default: str.lower)
+            changes all values to this case. Incase the type resolver uses a prefix tree trained on preset vocabulary,
+            the case of the tokens should match with the case here.
         """
-        super(RegexTokenizer, self).__init__(TOKENIZER_REGEX, type_resolver)
+        self.tokenizer_name = TOKENIZER_REGEX
+        self.type_resolver = type_resolver
+        self.case = case
         if abbreviations and regex == r"[\w]+|[^\w]":
             regex = r"[\w.]+|[^\w.]"
         self.regex = regex
         self.abbreviations = abbreviations
 
-    def _tokenize_value(self, rowidx, value):
+    def tokens(self, value: Scalar, rowidx: Optional[int] = None) -> List[Token]:
         """ tokenizes a single row value by applying the regular expression splitter.
         if abbreviations == True, the dots will be stripped at this stage to type_recognize the initials together
-        furthermore we split on underscores as they are considered as \w characters in regex
+        furthermore we split on underscores as they are considered as \\w characters in regex
 
         Parameters
         ----------
@@ -57,7 +67,7 @@ class RegexTokenizer(Tokenizer):
 
         Returns
         -------
-            tuple of strs
+        list of openclean.function.token.Token
         """
         post_regex = re.findall(self.regex, self.case(value))
 
@@ -70,44 +80,12 @@ class RegexTokenizer(Tokenizer):
                 abbreviation_updated.append(tok)
             post_regex = abbreviation_updated
 
-        return tuple([item for sublist in [re.split('(_)', j) for j in post_regex] for item in sublist])
-
-    def _encode_value(self, rowidx: int, value: str) -> Token:
-        """Pass the token rows to the underlying TypeResolver to convert the
-        tokens to their equivalent internal regex representations.
-
-        Parameters
-        ----------
-        rowidx: int
-            row id
-        value: str
-            value to tokenize/encode
-
-        Returns
-        -------
-        tuple of openclean.function.token.base.Token
-        """
-        if self.type_resolver is not None and not isinstance(self.type_resolver, TypeResolver):
-            raise RuntimeError("type_resolver: {} not of type: DataTypeResolver".format(type(self.type_resolver)))
-
-        # recreate row after parsing abbreviations and case settings
-        tokenized_value = self._tokenize_value(rowidx, value)
+        tokens = [Token(value=item, rowidx=rowidx) for sublist in [re.split('(_)', j) for j in post_regex] for item in sublist]
 
         if self.type_resolver is not None:
-            value = ''.join(tokenized_value)
-            encodings = self.type_resolver.resolve_row(rowidx, value, self._tokenize_value)
-            encoded = list()
-            for enc in encodings:
-                if isinstance(enc, str) and not isinstance(enc, Token):
-                    enc = self._tokenize_value(rowidx, enc)
-                    for token in enc:
-                        encoded.append(token)
-                else:
-                    encoded.append(enc)
-        else:
-            encoded = tokenized_value
+            tokens = self.type_resolver.resolve(tokens)
 
-        return tuple(encoded)
+        return tokens
 
 
 TOKENIZER_DEFAULT = 'default'
