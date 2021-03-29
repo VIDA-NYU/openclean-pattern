@@ -10,8 +10,7 @@
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.opencleanpatternfinder import OpencleanPatternFinder
 
-ROWS = [['32A West Broadway 10007'],
-        ['54E East VillageA 10003']]
+ROWS = ['32A West Broadway 10007', '54E East VillageA 10003']
 
 
 def test_regex_pattern_compare():
@@ -23,7 +22,7 @@ def test_regex_pattern_compare():
         compiler=DefaultRegexCompiler()
     )
 
-    pattern = pf.find(series=ROWS[0])[7]
+    pattern = pf.find(series=[ROWS[0]])[7]
 
     match = ROWS[1]
     assert pattern.top(pattern=True).compare(value=match, tokenizer=pf.tokenizer)
@@ -41,7 +40,7 @@ def test_regex_pattern_compile():
         compiler=DefaultRegexCompiler()
     )
 
-    pattern = pf.find(series=ROWS[0])[7]
+    pattern = pf.find(series=[ROWS[0]])[7]
 
     match = ROWS[1]
     assert pattern[pattern.top()].compile(tokenizer=pf.tokenizer).eval(match)

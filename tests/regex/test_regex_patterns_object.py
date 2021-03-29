@@ -14,8 +14,7 @@ from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.regex.base import SingularRowPattern, PatternElement, PatternElementSizeMonitor
 from openclean_pattern.tokenize.regex import DefaultTokenizer
 
-ROWS = [['32A West Broadway 10007'],
-        ['54E East Village 10003']]
+ROWS = ['32A West Broadway 10007', '54E East Village 10003']
 
 
 def test_patterns_object(business):
