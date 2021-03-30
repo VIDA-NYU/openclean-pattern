@@ -22,15 +22,15 @@ def test_default_resolver_with_interceptor(dates):
             interceptors=dt
         )
     )
-    encoded = rt.encode(dates.to_list())
+    tokens = rt.tokens(dates.to_list()[0])
 
     # ["Monday, 21st March, 2019"],
-    assert encoded[0][0].regex_type == SupportedDataTypes.WEEKDAY
-    assert encoded[0][1].regex_type == SupportedDataTypes.PUNCTUATION
-    assert encoded[0][2].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[0][3].regex_type == SupportedDataTypes.ALPHANUM
-    assert encoded[0][4].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[0][5].regex_type == SupportedDataTypes.MONTH
-    assert encoded[0][6].regex_type == SupportedDataTypes.PUNCTUATION
-    assert encoded[0][7].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[0][8].regex_type == SupportedDataTypes.DIGIT
+    assert tokens[0].regex_type == SupportedDataTypes.WEEKDAY
+    assert tokens[1].regex_type == SupportedDataTypes.PUNCTUATION
+    assert tokens[2].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[3].regex_type == SupportedDataTypes.ALPHANUM
+    assert tokens[4].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[5].regex_type == SupportedDataTypes.MONTH
+    assert tokens[6].regex_type == SupportedDataTypes.PUNCTUATION
+    assert tokens[7].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[8].regex_type == SupportedDataTypes.DIGIT

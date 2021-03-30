@@ -19,7 +19,7 @@ import sqlite3
 from openclean.data.refdata import RefStore
 from openclean_pattern.tokenize.prefix_tree import PrefixTree
 from openclean_pattern.datatypes.base import SupportedDataTypes
-from openclean.function.token.base import Token
+from openclean.function.token.base import Token, TokenTransformer
 
 import openclean.function.token.base as TT
 
@@ -70,7 +70,7 @@ WEEKDAYS = [
 ]
 
 
-class TypeResolver(metaclass=ABCMeta):
+class TypeResolver(TokenTransformer, metaclass=ABCMeta):
     """This class resolves different data types"""
 
     @staticmethod

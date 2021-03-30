@@ -7,7 +7,7 @@
 
 """Prefix searchable prefix tree implementation using pygtrie"""
 
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 import pygtrie
 import string
@@ -38,7 +38,7 @@ class PrefixTree(object):
                     raise ValueError("duplicate word '{}'".format(word))
                 self.trie[dom_word] = (word, label)
 
-    def prefix_search(self, content_words, ignore_punc=True) -> Tuple[int, str]:
+    def prefix_search(self, content_words: List[str], ignore_punc: Optional[bool] = True) -> Tuple[int, str]:
         """Identifies prefixe matches for the given word list from the vocabulary
         that was used to build the prefix tree.
 
@@ -56,13 +56,15 @@ class PrefixTree(object):
         -------
         tuple of int, str
         """
-        punc = list(string.punctuation)
+        punc = list(string.punctuation) + [' ']
         # Shortcut to access the trie separator.
         sep = self.trie._separator
         prefix_path = list()
         for i, token in enumerate(content_words):
-            # Ignore punctuation tokens if the respective flag is True.
-            if ignore_punc:
+            # Ignore punctuation tokens if the respective flag is True. We do
+            # need to make sure, however, not to ignore leading puctuation
+            # tokens.
+            if ignore_punc and prefix_path:
                 if token in punc and i < len(content_words)-1:
                     continue
             # Convert to lower case for case-insentive matching.
