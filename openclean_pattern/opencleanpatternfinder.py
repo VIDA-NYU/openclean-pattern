@@ -11,10 +11,12 @@ from openclean_pattern.tokenize.factory import TokenizerFactory
 from openclean_pattern.tokenize.regex import TOKENIZER_DEFAULT
 from openclean_pattern.tokenize.base import Tokenizer
 
-from openclean_pattern.align.factory import AlignerFactory, CollectorFactory
-from openclean_pattern.align.group import COLLECT_GROUP
+from openclean_pattern.align.factory import AlignerFactory
+from openclean_pattern.collect.factory import CollectorFactory
+from openclean_pattern.collect.group import COLLECT_GROUP
 from openclean_pattern.align.pad import ALIGN_PAD
-from openclean_pattern.align.base import Aligner, Collector
+from openclean_pattern.align.base import Aligner
+from openclean_pattern.collect.base import Collector
 
 from openclean_pattern.regex.compiler import RegexCompiler, COMPILER_DEFAULT
 from openclean_pattern.regex.factory import CompilerFactory

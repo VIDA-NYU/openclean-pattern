@@ -9,7 +9,7 @@
 
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.tokenize.regex import DefaultTokenizer
-from openclean_pattern.align.group import Group
+from openclean_pattern.collect.group import Group
 
 
 def test_default_regex_compiler(business):

@@ -9,7 +9,7 @@
 
 
 from openclean_pattern.align.pad import Padder
-from openclean_pattern.align.cluster import Cluster
+from openclean_pattern.collect.cluster import Cluster
 from openclean_pattern.tokenize.factory import DefaultTokenizer, RegexTokenizer
 from openclean_pattern.datatypes.resolver import AddressDesignatorResolver, DefaultTypeResolver
 from openclean_pattern.regex.compiler import DefaultRegexCompiler

@@ -12,7 +12,7 @@ from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.regex.base import SingularRowPattern, PatternElement, PatternElementSizeMonitor
 from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.tokenize.regex import DefaultTokenizer
-from openclean_pattern.align.group import Group
+from openclean_pattern.collect.group import Group
 
 ROWS = [['32A West Broadway 10007'],
         ['54E East Village 10003']]
