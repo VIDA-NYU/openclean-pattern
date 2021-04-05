@@ -8,12 +8,12 @@
 """unit tests for Pad class"""
 
 
-from openclean_pattern.align.progressive import ProgressiveAligner, NeedlemanWunschAligner
+from openclean_pattern.align.needlemanwunsch import NeedlemanWunschAligner
 from openclean_pattern.tokenize.factory import DefaultTokenizer
 from openclean_pattern.datatypes.base import SupportedDataTypes
 
 
-def test_needleman_wunsch():
+def test_needlemanwunsch():
     """test the needlenman wunsch pairwise aligner"""
     x = 'W. 125 ST' # alpha punc space digit space alpha
     y = 'W125 ST' # alphanum space alpha
@@ -21,7 +21,8 @@ def test_needleman_wunsch():
     column = [x, y]
 
     rows = DefaultTokenizer().encode(column)
-    aligned = NeedlemanWunschAligner.align(rows[0], rows[1])
+    nwa = NeedlemanWunschAligner()
+    aligned = nwa.align(rows)
 
     assert len(aligned) == len(rows)
     assert len(aligned[1]) == len(aligned[0])
@@ -33,7 +34,7 @@ def test_needleman_wunsch():
 
     z = '12BROADWAY.AVE'
     rows = DefaultTokenizer().encode([y, z])
-    aligned = NeedlemanWunschAligner.align(rows[0], rows[1])
+    aligned = nwa.align(rows)
 
     assert len(aligned) == len(rows)
     assert len(aligned[1]) == len(aligned[0])
