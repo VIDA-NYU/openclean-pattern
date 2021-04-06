@@ -35,7 +35,7 @@ class Padder(Aligner):
             The dict of groups with group id as key and row indices as values
         Returns
         -------
-            list[Tuple(Tokens)]
+            dict[int, Tuple(Tokens)]
         """
         aligned = [None] * len(column)
         for cluster, idx in groups.items():

@@ -16,9 +16,16 @@ DISTANCE_TED = 'TED'
 
 class TreeEditDistance(Distance):
     """Takes in two rows of Tokens and calculates the distance between them"""
-    def __init__(self):
-        """Initializes the distance class"""
+    def __init__(self, strict=True):
+        """Initializes the distance class
+
+        Parameters
+        ----------
+        strict: bool (default:True)
+            if true, the algorithm will consider alphas and nums distinct from alphanums when calculating distance
+        """
         super(TreeEditDistance, self).__init__(DISTANCE_TED)
+        self.strict = strict
 
     # distance b/w 2 rows:
     def compute(self, u, v):
@@ -46,6 +53,11 @@ class TreeEditDistance(Distance):
                 # and both are not punctuation
                 if ui.regex_type in puncs and vi.regex_type in puncs:
                     continue
+                # consider strictness
+                if not self.strict:
+                    if (ui.regex_type in [SupportedDataTypes.ALPHA, SupportedDataTypes.DIGIT] and vi.regex_type == SupportedDataTypes.ALPHANUM) or \
+                            (vi.regex_type in [SupportedDataTypes.ALPHA, SupportedDataTypes.DIGIT] and ui.regex_type == SupportedDataTypes.ALPHANUM):
+                        continue
                 # increment the distance
                 distance += 1
 

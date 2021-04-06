@@ -9,15 +9,16 @@
 
 from openclean_pattern.align.base import Aligner
 from openclean_pattern.datatypes.resolver import TypeResolver
+from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.align.distance.factory import DistanceFactory, DISTANCE_TED
-from openclean_pattern.tokenize.token import Token
-from openclean_pattern.align.base import Sequence
+from openclean_pattern.align.base import Sequence, Alignment
 
 from collections import deque
 from itertools import product
 from typing import Iterable, List, Dict
 
 ALIGN_NEEDLEMANWUNSCH = "nw"
+GAP = SupportedDataTypes.GAP
 
 
 class NeedlemanWunschAligner(Aligner):
@@ -99,17 +100,17 @@ class NeedlemanWunschAligner(Aligner):
             if direction == DIAG:
                 element = i, j
             elif direction == LEFT:
-                element = i, TypeResolver.gap()
+                element = i, GAP
             elif direction == UP:
-                element = TypeResolver.gap(), j
+                element = GAP, j
             alignment.appendleft(element)
             di, dj = direction
             i, j = i + di, j + dj
         while i >= 0:
-            alignment.appendleft((i, TypeResolver.gap()))
+            alignment.appendleft((i, GAP))
             i -= 1
         while j >= 0:
-            alignment.appendleft((TypeResolver.gap(), j))
+            alignment.appendleft((GAP, j))
             j -= 1
 
         return list(alignment)
@@ -123,15 +124,16 @@ class NeedlemanWunschAligner(Aligner):
 
         a, b = list(), list()
         for i, _ in alignment:
-            if isinstance(i, Token) and i == TypeResolver.gap():
-                a.append(TypeResolver.gap())
+            if i is GAP:
+                a.append(TypeResolver.gap(i))
             else:
                 a.append(x[i])
 
         for _, j in alignment:
-            if isinstance(j, Token) and j == TypeResolver.gap():
-                b.append(TypeResolver.gap())
+            if j is GAP:
+                b.append(TypeResolver.gap(j))
             else:
                 b.append(y[j])
 
-        return a, b
+        # return a, b
+        return Alignment.from_sequences([Sequence(a), Sequence(b)])

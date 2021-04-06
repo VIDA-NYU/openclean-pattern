@@ -29,7 +29,7 @@ class Aligner(metaclass=ABCMeta):
     @abstractmethod
     def align(self, column: List[List[Token]], groups: Dict):
         """Takes in the column and the groups and returns an aligned version of each group by adding Gap tokens to each row.
-        A list[Tuple(Tokens)] is returned with the aligned values
+        A dict[int, Tuple(Tokens)] is returned with the aligned values
 
         Parameters
         ----------
@@ -39,7 +39,7 @@ class Aligner(metaclass=ABCMeta):
             The dict of groups with group id as key and row indices as values
         Returns
         -------
-            list[Tuple(Tokens)]
+            dict[int, Tuple(Tokens)]
         """
         raise NotImplementedError()
 

@@ -13,6 +13,10 @@ import random
 import bisect
 from collections import Counter
 
+from openclean_pattern.tokenize.token import Token
+from openclean_pattern.datatypes.base import SupportedDataTypes
+
+
 ### Comparators
 
 
@@ -40,6 +44,29 @@ class Comparator(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
+
+class TokenComparator(Comparator):
+    """compare 2 tokens for subset matches (e.g. alpha is a subset of alphanum)"""
+
+    def compare(self, a, b, meta=None):
+        if not isinstance(a, Token) or not isinstance(b, Token):
+            raise TypeError("expected Tokens")
+
+        if a.value == b.value or a.regex_type == b.regex_type:
+            return True
+        # (ALPHA, DIGIT) -> ALPHANUM
+        elif (a.regex_type == SupportedDataTypes.ALPHA or a.regex_type == SupportedDataTypes.DIGIT) \
+                and b.regex_type == SupportedDataTypes.ALPHANUM:
+            return True
+        elif (b.regex_type == SupportedDataTypes.ALPHA or b.regex_type == SupportedDataTypes.DIGIT) \
+                and a.regex_type == SupportedDataTypes.ALPHANUM:
+            return True
+        # (SPACE, PUNC) -> PUNC
+        elif (a.regex_type == SupportedDataTypes.SPACE_REP or b.regex_type == SupportedDataTypes.SPACE_REP) and \
+                (a.regex_type == SupportedDataTypes.PUNCTUATION or b.regex_type == SupportedDataTypes.PUNCTUATION):
+            return True
+
+        return False
 
 
 class StringComparator(Comparator):
@@ -96,7 +123,6 @@ class StringComparator(Comparator):
                 anslist.append(match)
 
         return anslist
-
 
 
 class PatternComparator(Comparator):
@@ -231,6 +257,7 @@ class RandomSampler(Sampler):
     Note: if a Counter or dict of type {value:frequency} is passed in, there is no rowidx information tied to
     the sampled series and this can possibly require an extra lookup during anomaly detection
     """
+
     def __init__(self, iterable, n=1, random_state=None):
         """initizlizes the Random Sampler class
 
@@ -260,6 +287,7 @@ class RandomSampler(Sampler):
 
 class Distinct(Sampler):
     """Class to select only the distinct values from the input iterable"""
+
     def __init__(self, iterable):
         """initizlizes the Distinct class
 
@@ -279,11 +307,11 @@ class Distinct(Sampler):
         """
         return list(set(self.iterable))
 
+
 ### Helper methods
 
 
 def stringify(tokens):
-    from openclean_pattern.tokenize.token import Token
     """ Accepts a list of tokens (strings and Tokens) and combines the strings together breaking it by any
     Token objects in between
     
@@ -313,3 +341,16 @@ def stringify(tokens):
         stringified.append(val)
 
     return stringified
+
+
+def list_contains_list(o, tree_types=list):
+    """checks is list contains more lists"""
+    if isinstance(o, tree_types):
+        for v in o:
+            if isinstance(v, tree_types):
+                return True
+    elif not isinstance(o, tree_types):
+        #  ignore values that arent lists themselves
+        return True
+
+    return False

@@ -7,118 +7,20 @@
 
 """implements the progressive aligner"""
 
-
-from openclean_pattern.align.base import Aligner
+from openclean_pattern.align.base import Aligner, Sequence, Alignment
 from openclean_pattern.datatypes.base import SupportedDataTypes
+from openclean_pattern.datatypes.resolver import TypeResolver
+from openclean_pattern.collect.neighbor import NeighborJoin
+from openclean_pattern.align.distance.tree_edit import TreeEditDistance
+from openclean_pattern.align.needlemanwunsch import NeedlemanWunschAligner
+from openclean_pattern.utils.utils import list_contains_list
 
 from collections import defaultdict, deque
 from itertools import product
-
+from typing import List, Dict, Union
 
 ALIGN_PRO = "pro"
 GAP = SupportedDataTypes.GAP
-
-
-class NeedlemanWunschAligner:
-    """
-    Dynamic programming solution to the otherwise brute force sequence alignment problem vastly used for protien and nucleotide sequencing.
-    Globally aligns two sequences at a time. Gap penalty and different initializations added here to allow different configurations.
-
-    References
-        https://www.cs.sjsu.edu/~aid/cs152/NeedlemanWunsch.pdf
-        https://upload.wikimedia.org/wikipedia/en/c/c4/ParallelNeedlemanAlgorithm.pdf
-    """
-
-    @staticmethod
-    def _align(x, y, keep_gaps_together):
-        """aligns two inputs
-
-        Parameters
-        ----------
-        x: str
-            value 1
-        y: str
-            value 2
-        keep_gaps_together: bool
-            flag to allow different configurations
-
-        Returns
-        -------
-            aligned list of lists
-        """
-
-        DIAG = -1, -1
-        LEFT = -1, 0
-        UP = 0, -1
-
-        # Create tables F and Ptr and get costing
-        F = dict()
-        Ptr = {}
-
-        F[-1, -1] = 0
-        N, M = len(x), len(y)
-
-        # 2i keeps gaps together, -i/-j injects gaps inside strings
-        for i in range(N):
-            F[i, -1] = -i if not keep_gaps_together else 2 * i
-        for j in range(M):
-            F[-1, j] = -j if not keep_gaps_together else 2 * j
-
-        # heuristic optimal costing for sequences
-        _eval = (lambda a, b: int(a.regex_type == b.regex_type)) if not keep_gaps_together else (lambda a, b: 2 if a.regex_type == b.regex_type else -3)
-
-        option_Ptr = DIAG, LEFT, UP
-        for i, j in product(range(N), range(M)):
-            # no gap penatlies involved (or gap affines like in Gotoh's algorithm)
-            option_F = (
-                F[i - 1, j - 1] + _eval(x[i], y[j]),
-                F[i - 1, j] - 1,
-                F[i, j - 1] - 1,
-            )
-            F[i, j], Ptr[i, j] = max(zip(option_F, option_Ptr))
-
-        # Work backwards from (N - 1, M - 1) to (0, 0)
-        # to find the best alignment.
-        alignment = deque()
-        i, j = N - 1, M - 1
-        while i >= 0 and j >= 0:
-            direction = Ptr[i, j]
-            if direction == DIAG:
-                element = i, j
-            elif direction == LEFT:
-                element = i, GAP
-            elif direction == UP:
-                element = GAP, j
-            alignment.appendleft(element)
-            di, dj = direction
-            i, j = i + di, j + dj
-        while i >= 0:
-            alignment.appendleft((i, GAP))
-            i -= 1
-        while j >= 0:
-            alignment.appendleft((GAP, j))
-            j -= 1
-
-        return list(alignment), F
-
-    @staticmethod
-    def align(x, y, keep_gaps_together=False):
-        alignment, _ = NeedlemanWunschAligner._align(x, y, keep_gaps_together)
-
-        a, b = list(), list()
-        for i, _ in alignment:
-            if i is GAP:
-                a.append(GAP)
-            else:
-                a.append(x[i])
-
-        for _, j in alignment:
-            if j is GAP:
-                b.append(GAP)
-            else:
-                b.append(y[j])
-
-        return a, b
 
 
 class ProgressiveAligner(Aligner):
@@ -137,14 +39,23 @@ class ProgressiveAligner(Aligner):
         Identify the best multiple sequence alignment from all possibilities after step 4 using core column prediction techniques. Ref: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5397798/
         Create Profiles of various positions
     """
-    def __init__(self, pairwise=None, keep_gaps_together=False, gap_penalty=1, use_guide_tree=True):
+
+    def __init__(self, pairwise: Aligner = None, gap_penalty: float = 1, use_guide_tree: bool = True):
         """initializes the Progressive Aligner
+
+        Parameters
+        ----------
+        pairwise: Aligner
+            accepts an aligner to perform pairwise alignment of 2 input sequences
+        gap_penalty: bool
+            controls the penalty term for introducing gaps
+        use_guide_tree: bool
+            flag to use Neearest Neighbor Joining clustering to compute sequence of the iteration
         """
         super(ProgressiveAligner, self).__init__(ALIGN_PRO)
         self.pairwise = NeedlemanWunschAligner() if pairwise is None else pairwise
-        self.keep_gaps_together = keep_gaps_together
-
-        self.dist = lambda x, y: 0 if x == y else 2 if x is GAP or y is GAP else 3
+        self.dist = lambda x, y: 0 if TreeEditDistance(strict=False).compute([x], [
+            y]) == 0 else 2 if x.regex_type is GAP or y.regex_type is GAP else 3
 
         self.min_samples = 4
         self.eps = .5
@@ -152,102 +63,61 @@ class ProgressiveAligner(Aligner):
         self.gap_penalty = gap_penalty
         self.use_guide_tree = use_guide_tree
 
-    def nj_cluster(self, column):
-        from openclean.profiling.pattern.align.NJ_Cluster import get_tree_and_order
-
-        tree, groups  = get_tree_and_order(column)
-
-        return groups
-
-    def cluster_and_align(self, column):
-        """
-        takes in a list of values
-            - pairwise distances + cluster => guide tree
-            - align each cluster
-            - inter-cluster alignment?
-
-        give matrices to align
-
-            e.g.
-            column_matrix = 2 x 4
-            row_matrix = 4 x 2
-
-            *pad extra Gaps
-
-             |   | - | S | A | N | D |
-             |   | - | - | A | N | D |
-          -  | - |   |   |   |   |   |
-          F  | B |   |   |   |   |   |
-          E  | A |   |   |   |   |   |
-          N  | N |   |   |   |   |   |
-          D  | D |   |   |   |   |   |
-        """
-        aln1, order = self.nj_cluster(column)
-
-        alignments = dict()
-        header = None
-        for al in aln1:
-            if al != -1:
-                if len(aln1[al]) > 1:
-                    clstr = [column[i] for i in aln1[al]]
-                    header, F = self.align_column(clstr)
-                else:
-                    header = aln1[al]
-            alignments[al] = header
-
-        return alignments
-
-    def get_pairs(self, aln):
+    def _get_pairs(self, aln: List) -> Dict:
         """input list of alignments / sequences. e.g. ['w- 123 st----','w. 12- street']
         and get pairs e.g.[['w','w'],['-','.']...]
+
+        Parameters
+        ----------
+        aln: list
+            input list to get pairs of
+
+        Returns
+        -------
+            dict of lists containing piecewise pairs for each position
         """
-        if isinstance(aln, str):
-            aln = [aln]
-
-        if not isinstance(aln, list) and not isinstance(aln, tuple):
-            raise ValueError("expected a list or a tuple")
-
-        N = len(aln[0])
-        M = len(aln)
+        R = len(aln) if isinstance(aln, Alignment) else 1
+        C = len(aln[0]) if isinstance(aln, Alignment) else len(aln)
 
         pairs = defaultdict(list)
+        [pairs[-1].append(TypeResolver.gap(i)) for i in range(R)]
 
-        [pairs[-1].append(GAP) for i in range(M)]
-
-        for i, al in enumerate(aln):
-            for j in range(N):
-                pairs[j].append(al[j])
+        for j in range(C):
+            if isinstance(aln, Alignment):
+                for seq in aln:
+                    pairs[j].append(seq[j])
+            elif isinstance(aln, Sequence):
+                pairs[j].append(aln[j])
+            else:
+                raise ValueError("Expected Alignment or Sequence")
 
         return pairs
 
-    def pairwise_dist(self, pair1, pair2):
+    def _pairwise_dist(self, pair1: List, pair2: List) -> float:
         """calculates the total pair distance
 
         pair1 could be: ['W','S'] and pair 2 ['-','N']
         The distance would be the sum of the dot product: d('W','-') + d('W','N') + d('S','-') + d('S','N')
-        """
-        d = self.dist
 
+        Parameters
+        ----------
+        pair1: list
+            distance source component
+        pair2: list
+            distance destination component
+
+        Returns
+        -------
+            float distance
+        """
         distance = 0
         for x in pair1:
             for y in pair2:
-                distance += d(x, y)
+                distance += self.dist(x, y)
 
         return distance
 
-    def resolve_alignment(self, y, alignment, left=False):
-        """
-        converts the alignment matrix into human readable strings.
-        If left is False, it is going to use the right value of each tuple in the alignment matrix
-        """
-        if left:
-            yi = "".join(GAP if i is GAP else y[i] for i, _ in alignment)
-        else:
-            yi = "".join(GAP if i is GAP else y[i] for _, i in alignment)
-
-        return yi
-
-    def init_matrix(self, aln, seq):
+    def _init_matrix(self, aln: List, seq: List) -> Dict:
         """takes the alignment and the sequences/alignments and returns the initialized F marix containing
         the pairwise similarities as starting indices
 
@@ -265,67 +135,117 @@ class ProgressiveAligner(Aligner):
              | S | 24 |
              | t | 28 |
 
+        Parameters
+        ----------
+        aln: Alignment
+            the rows of the pairwise init matrix
+        seq: Sequence
+            the columns of the pairwise init matrix
+
+        Returns
+        -------
+            an initialization matrix as a dictionary
         """
         F = dict()
 
         for ci in aln:
             pre = 0 if ci == -1 else F[-1, ci - 1]
-            F[-1, ci] = (pre + self.pairwise_dist(aln[ci], seq[-1]))
+            F[-1, ci] = (pre + self._pairwise_dist(aln[ci], seq[-1]))
 
         for ri in seq:
             pre = 0 if ri == -1 else F[ri - 1, -1]
-            F[ri, -1] = (pre + self.pairwise_dist(seq[ri], aln[-1]))
+            F[ri, -1] = (pre + self._pairwise_dist(seq[ri], aln[-1]))
 
         return F
 
-    def align_column(self, column):
-        """align lists of sequences and alignments
-        ['asd', ('ads,'dds'),'wsa']
+    def _align_order(self, order: List) -> Alignment:
+        """align lists of input sequences with ordering information as follows:
+            ['AA',('DC,'FC')] -- merges ('DC'+'FC')+'AA'
+
+            more explicitly:
+            [R1,(R2, R3)] where R1=('alpha','num'), R2=('alphanum','num'), R3=('alpha','punc') merges (R2 + R3) + R1
+
+        Parameters
+        ----------
+        order: list
+            the list of sequences and alignments to merge
+
+        Returns
+        -------
+            an ordered list of the local alignment
         """
-        F = dict()
+
+        if len(order) == 1:
+            v = order[0]
+            if isinstance(v, Sequence):
+                return Alignment.from_sequences([v])
+            elif isinstance(v, Alignment):
+                return v
+            else:
+                raise ValueError("Invalid Input")
+
         computed_alignments = list()
-        raw_values = list()
-        for val in column:
-            if isinstance(val, tuple):
+        pair_sequences = list()
+        free_sequences = list()
+
+        for val in order:
+            if isinstance(val, Sequence):
+                free_sequences.append(val)
+            elif isinstance(val, Alignment):
                 computed_alignments.append(val)
             else:
-                raw_values.append(val)
+                pair_sequences.append(val)
 
-        # align the values
-        this_alignment = tuple()
-        for value in raw_values:
-            if len(this_alignment) == 0:
-                this_alignment = (value,)
+        # align all pairs
+        for pair in pair_sequences:
+            paln = Alignment(())
+            for pseq in pair:
+                if len(paln) == 0:
+                    paln = Alignment.from_sequences([pseq])
+                else:
+                    paln = Alignment(self._align(paln, pseq))
+            if len(paln):
+                computed_alignments.append(paln)
+
+        # align free sequences
+        faln = Alignment(())
+        for seq in free_sequences:
+            if len(faln) == 0:
+                faln = Alignment.from_sequences([seq])
             else:
-                this_alignment, F = self.align(this_alignment, value)
+                faln = Alignment(self._align(faln, seq))
+        if len(faln):
+            computed_alignments.append(faln)
 
-        # align all the alignments
-        if len(computed_alignments) > 0 and len(this_alignment) > 0:
-            for als in computed_alignments:
-                this_alignment, F = self.align(this_alignment, als)
+        # align all alignments
+        aln = computed_alignments[0]
+        for al in computed_alignments[1:]:
+            aln = Alignment(self._align(aln, al))
 
-        elif len(computed_alignments) > 1 and len(this_alignment) == 0:
-            this_alignment = computed_alignments[0]
-            for als in computed_alignments[1:]:
-                this_alignment, F = self.align(this_alignment, als)
+        return aln
 
-        elif len(computed_alignments) == 1 and len(this_alignment) == 0:
-            this_alignment = computed_alignments[0]
+    def align_guide_tree(self, guide: List) -> Alignment:
+        """accepts a tupled guide tree and aligns it recursively starting from inner most node
 
-        return this_alignment, F
+        Parameters
+        ----------
+        guide: list
+            The guide to recursively iterate over and create an overall alignment starting merging from the inner
+            most node
 
-    def align_guide_tree(self, guide):
-        """takes in a tupled guide tree and aligns starting from inner most node"""
-        from openclean.profiling.pattern.align.NJ_Cluster import list_contains_list
+        Returns
+        -------
+            an aligned column
+        """
 
         def traverse(o, func):
             """traverses the order array finding the deepest node"""
             for item in o:
                 if isinstance(item, str) or isinstance(item, tuple):
                     yield item
-                if isinstance(item, list):
+                elif isinstance(item, list):
                     if not list_contains_list(item):
-                        a, _ = func(item)
+                        a = func(item)
                         yield a
                     else:
                         yield list(traverse(item, func))
@@ -336,21 +256,56 @@ class ProgressiveAligner(Aligner):
                 order = list(traverse(order, func))
             return func(order)
 
-        return apply_func(guide, self.align_column)
+        return apply_func(guide, self._align_order)
 
-    def align(self, x, y):
-        """align a sequence with the alignment"""
-        x = [x] if isinstance(x, str) else list(x) if isinstance(x, Iterable) else None
-        y = [y] if isinstance(y, str) else list(y) if isinstance(y, Iterable) else None
+    def align_column(self, column: List) -> Alignment:
+        """aligns an input column without any extra inbuilt aligning information e.g. alignment order. For
+        alignment with order, see self.align_guide_tree
 
-        if x is None or y is None:
-            raise ValueError("Invalid input.")
+        Parameters
+        ----------
+        column: list
+            the list of Tokens to align
 
-        if len(x) == 1 and len(y) == 1:
-            alignment, F = self.pairwise.align(x[0], y[0], keep_gaps_together=self.keep_gaps_together)
-            ax = [self.resolve_alignment(x[0], alignment, left=True)]
-            ax.append(self.resolve_alignment(y[0], alignment, left=False))
-            return tuple(ax), F
+        Returns
+        -------
+            an aligned column
+        """
+        pair = tuple()
+        if len(column) >= 2:
+            pair = (Sequence.from_tokens(column[0]), Sequence.from_tokens(column[1]))
+            if len(column) == 2:
+                return self._align_order(pair)
+            for i, c in enumerate(column):
+                if i > 1:
+                    pair = (pair, Sequence.from_tokens(c))
+        elif len(column) == 1:
+            pair = (Sequence.from_tokens(column[0]),)
+
+        return self._align_order(pair)
+
+
+    def _align(self, x: Union[Sequence, Alignment], y: Union[Sequence, Alignment]) -> Alignment:
+        """adds a single sequence to the alignment
+
+        Parameters
+        ----------
+        x: Alignment or Sequence
+            the current local/global alignment
+        y: Alignment or Sequence
+            the sequence or alignment to add to it
+
+        Returns
+        -------
+            an Alignment with the Sequence added
+        """
+        if not (isinstance(x, Alignment) or isinstance(x, Sequence)) or \
+                not (isinstance(y, Sequence) or isinstance(y, Alignment)):
+            raise ValueError("Invalid Input")
+
+        # single sequence/sequence or sequence/alignment but not alignment/alignment
+        if not (isinstance(x, Alignment) and isinstance(y, Alignment)) and len(x) == 1:
+            return self.pairwise.align([x[0], y])
 
         DIAG = -1, -1
         LEFT = -1, 0
@@ -359,18 +314,19 @@ class ProgressiveAligner(Aligner):
         # Create tables F and Ptr and get costing
         Ptr = {}
 
-        aln = self.get_pairs(x)
-        seq = self.get_pairs(y)
+        aln = self._get_pairs(x)
+        seq = self._get_pairs(y)
+
         N = len(aln) - 1
         M = len(seq) - 1
 
-        F = self.init_matrix(aln, seq)
+        F = self._init_matrix(aln, seq)
 
         option_Ptr = DIAG, LEFT, UP
 
         for i, j in product(range(M), range(N)):
             option_F = (
-                F[i - 1, j - 1] + self.pairwise_dist(aln[j], seq[i]),
+                F[i - 1, j - 1] + self._pairwise_dist(aln[j], seq[i]),
                 F[i - 1, j] + self.gap_penalty,
                 F[i, j - 1] + self.gap_penalty,
             )
@@ -398,21 +354,39 @@ class ProgressiveAligner(Aligner):
             alignment.appendleft((GAP, j))
             j -= 1
 
-        aligned = list()
-        for xi in x:
-            res = self.resolve_alignment(xi, alignment, left=False)
-            aligned.append(res)
+        als = self._resolve_alignment(alignment, x, y)
 
-        for yi in y:
-            res = self.resolve_alignment(yi, alignment, left=True)
-            aligned.append(res)
+        return als
 
-        return tuple(aligned), F
+    def _resolve_alignment(self, gap_info, x, y) -> Alignment:
+        """inserts gaps into input sequences/alignments as per the latest computation and merges them into a full alignment
 
-    def align(self, column, groups):
+        Parameters
+        ----------
+        gap_info: list
+            the latest computed alignment of x and y with gap placements
+        x: Sequence/Alignment
+            the first component in the alignment object
+        y: Sequence/Alignment
+            the second component in the alignment object
+
+        Returns
+        -------
+            merged alignment with gaps of x and y
         """
+        for n, a in enumerate(gap_info):
+            j, i = a
+            if i is GAP:
+                x = x.insert_gap(n)
 
+            if j is GAP:
+                y = y.insert_gap(n)
 
+        return Alignment.from_tuple((x, y))
+
+    def align(self, column: List, groups: Dict) -> List[Alignment]:
+        """Takes in the column and the groups and returns an aligned version of each group by adding Gap tokens to each row.
+        A list[Tuple(Tokens)] is returned with the aligned values
 
         Parameters
         ----------
@@ -420,8 +394,27 @@ class ProgressiveAligner(Aligner):
             The column to align
         groups: dict
             The dict of groups with group id as key and row indices as values
+
         Returns
         -------
-            list[Tuple(Tokens)]
+            dict[Alignment]
         """
-        raise NotImplementedError()
+        aligned = list()
+        for cluster, idx in groups.items():
+            #  pad the smaller ones with gap characters
+            col = list()
+            for id in idx:
+                if not isinstance(id, int):
+                    raise KeyError("row indices should be int. found: {}".format(id))
+                col.append(column[id])
+
+            if not self.use_guide_tree or len(col) < 3:
+                aligned_cluster = self.align_column(col)
+            else:
+                nj = NeighborJoin()
+                tree, grps = nj.get_tree_and_order(col)
+                aligned_cluster = self.align_guide_tree(grps)
+
+            aligned.append(aligned_cluster)
+
+        return aligned
