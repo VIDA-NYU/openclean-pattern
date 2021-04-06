@@ -234,7 +234,7 @@ class NeighborJoin(Collector):
 
         # create the tree with the indices of the rows instead of the actual values
         nw = list()
-        [nw.append(i) for i in range(len(words))]
+        [nw.append(str(i)) for i in range(len(words))]
 
         dm = DistanceMatrix(distances, nw)
         tree = nj(dm)
