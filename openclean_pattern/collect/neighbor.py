@@ -54,7 +54,12 @@ def serialize(obj: TreeNode) -> str:
             # Note we don't check for None because there is no way to represent
             # an empty string as a label in Newick. Therefore, both None and ''
             # are considered to be the absence of a label.
-            label = node.name
+            lblst = []
+            if node.support is not None:  # prevents support of NoneType
+                lblst.append(str(node.support))
+            if node.name:  # prevents name of NoneType
+                lblst.append(node.name)
+            label = ':'.join(lblst)
             if label:
                 escaped = "%s" % label.replace("'", "''")
                 if any(t in operators for t in label):
