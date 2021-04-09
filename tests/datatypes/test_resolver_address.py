@@ -17,39 +17,19 @@ def test_default_ad_resolver(business):
     rt = RegexTokenizer(type_resolver=dt)
 
     business['Address_combined'] = business['Address '].astype(str) + ' | ' + business['Address Continued'].astype(str)
-    encoded = rt.encode(business['Address_combined'].to_list())
-
+    tokens = rt.tokens(business['Address_combined'].to_list()[2])
     # LN -> _STREET_
     # ['22207 SW SIR LANCELOT LN | nan'],
-    assert encoded[2][0].regex_type == SupportedDataTypes.DIGIT
-    assert encoded[2][1].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][2].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[2][3].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][4].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[2][5].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][6].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[2][7].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][8].regex_type == SupportedDataTypes.STREET
-    assert encoded[2][9].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][10].regex_type == SupportedDataTypes.PUNCTUATION
-    assert encoded[2][11].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][12].regex_type == SupportedDataTypes.ALPHA
-
-    # the other way round
-    encoded = dt.resolve(column=business['Address_combined'].to_list())
-
-    # LN -> _STREET_
-    # ['22207 SW SIR LANCELOT LN | nan'],
-    assert encoded[2][0].regex_type == SupportedDataTypes.DIGIT
-    assert encoded[2][1].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][2].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[2][3].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][4].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[2][5].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][6].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[2][7].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][8].regex_type == SupportedDataTypes.STREET
-    assert encoded[2][9].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][10].regex_type == SupportedDataTypes.PUNCTUATION
-    assert encoded[2][11].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[2][12].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[0].regex_type == SupportedDataTypes.DIGIT
+    assert tokens[1].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[2].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[3].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[4].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[5].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[6].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[7].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[8].regex_type == SupportedDataTypes.STREET
+    assert tokens[9].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[10].regex_type == SupportedDataTypes.PUNCTUATION
+    assert tokens[11].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[12].regex_type == SupportedDataTypes.ALPHA

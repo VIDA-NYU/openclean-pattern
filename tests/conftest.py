@@ -17,14 +17,15 @@ CHECKINTIME = os.path.join(DIR, 'check-in-time.txt.gz')
 YEAR = os.path.join(DIR, 'year.txt.gz')
 SPECIMEN = os.path.join(DIR, 'specimen.txt.gz')
 
+
 @pytest.fixture
 def dates():
     """Get a simple series with dates"""
     data = [
-        ['Monday, 21st March, 2019'],
-        ['Wed, October 19, 1990'],
-        ['Sun Jan 2010'],
-        ['Dec 3']
+        'Monday, 21st March, 2019',
+        'Wed, October 19, 1990',
+        'Sun Jan 2010',
+        'Dec 3'
     ]
     return pd.Series(data=data)
 
@@ -34,6 +35,7 @@ def business():
     """Load the business dataset"""
     return pd.read_csv(BUSINESS)
 
+
 @pytest.fixture
 def checkintime():
     """Load the check in time dataset"""
@@ -42,6 +44,7 @@ def checkintime():
         .sample(1000, random_state=42)\
         .to_df()['term']
 
+
 @pytest.fixture
 def specimen():
     """Load the specimen dataset"""
@@ -49,6 +52,7 @@ def specimen():
         .select('term')\
         .sample(1000, random_state=42)\
         .to_df()['term']
+
 
 @pytest.fixture
 def year():

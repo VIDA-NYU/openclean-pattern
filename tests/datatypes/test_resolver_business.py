@@ -5,7 +5,7 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""unit tests for business type resolver classs"""
+"""Unit tests for business type resolver classs"""
 
 from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.datatypes.resolver import BusinessEntityResolver, DefaultTypeResolver
@@ -16,12 +16,12 @@ def test_default_be_resolver(business):
     dt = DefaultTypeResolver(interceptors=BusinessEntityResolver())
     rt = RegexTokenizer(type_resolver=dt)
 
-    encoded = rt.encode(business['Business Name'].to_list())
+    tokens = rt.tokens(business['Business Name'].to_list()[1])
 
     # ['TSHIRTS4TRUTH LLC'"],
-    assert encoded[1][0].regex_type == SupportedDataTypes.ALPHANUM
-    assert encoded[1][1].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[1][2].regex_type == SupportedDataTypes.BE
+    assert tokens[0].regex_type == SupportedDataTypes.ALPHANUM
+    assert tokens[1].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[2].regex_type == SupportedDataTypes.BE
 
 
 def test_default_be_resolver_abbreviations(business):
@@ -30,32 +30,31 @@ def test_default_be_resolver_abbreviations(business):
     # ['RO SHOW NETWORK L.L.C.']
     # without abbreviation parsing
     rt = RegexTokenizer(type_resolver=dt)
-    encoded = rt.encode(business['Business Name'].to_list())
+    tokens = rt.tokens(business['Business Name'].to_list()[12])
 
-    assert len(encoded[12]) == 12  # l.l.c. will broken down into separate tokens
-    assert encoded[12][0].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[12][1].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[12][2].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[12][3].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[12][4].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[12][5].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[12][6].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[12][7].regex_type == SupportedDataTypes.PUNCTUATION
-    assert encoded[12][8].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[12][9].regex_type == SupportedDataTypes.PUNCTUATION
-    assert encoded[12][10].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[12][11].regex_type == SupportedDataTypes.PUNCTUATION
+    assert len(tokens) == 12  # l.l.c. will broken down into separate tokens
+    assert tokens[0].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[1].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[2].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[3].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[4].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[5].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[6].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[7].regex_type == SupportedDataTypes.PUNCTUATION
+    assert tokens[8].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[9].regex_type == SupportedDataTypes.PUNCTUATION
+    assert tokens[10].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[11].regex_type == SupportedDataTypes.PUNCTUATION
 
     # with abbreviations parsing
     rt = RegexTokenizer(abbreviations=True, type_resolver=dt)
-    encoded = rt.encode(business['Business Name'].to_list())
+    tokens = rt.tokens(business['Business Name'].to_list()[12])
 
-    assert len(encoded[12]) == 7  # l.l.c. => llc => BE
-    assert encoded[12][0].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[12][1].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[12][2].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[12][3].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[12][4].regex_type == SupportedDataTypes.ALPHA
-    assert encoded[12][5].regex_type == SupportedDataTypes.SPACE_REP
-    assert encoded[12][6].regex_type == SupportedDataTypes.BE
-
+    assert len(tokens) == 7  # l.l.c. => llc => BE
+    assert tokens[0].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[1].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[2].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[3].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[4].regex_type == SupportedDataTypes.ALPHA
+    assert tokens[5].regex_type == SupportedDataTypes.SPACE_REP
+    assert tokens[6].regex_type == SupportedDataTypes.BE

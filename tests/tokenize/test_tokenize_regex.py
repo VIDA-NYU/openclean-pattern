@@ -5,8 +5,6 @@
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-import pytest
-
 from openclean_pattern.tokenize.regex import RegexTokenizer
 from openclean_pattern.datatypes.base import SupportedDataTypes
 from openclean_pattern.datatypes.resolver import BasicTypeResolver
@@ -18,9 +16,8 @@ ROWS = ['273 W MERCER STREET', '12 E. BROADWAY']
 
 def test_regex_tokenizer_tokenize():
     dt = RegexTokenizer()
-    tokenized = dt.tokenize(ROWS)
-    assert tokenized[0] == ('273', ' ', 'w', ' ', 'mercer', ' ', 'street')
-    assert tokenized[1] == ('12', ' ', 'e', '.', ' ', 'broadway')
+    assert dt.tokens(ROWS[0]) == ['273', ' ', 'w', ' ', 'mercer', ' ', 'street']
+    assert dt.tokens(ROWS[1]) == ['12', ' ', 'e', '.', ' ', 'broadway']
 
 
 def test_regex_tokenizer_encode():

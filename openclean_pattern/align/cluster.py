@@ -20,7 +20,7 @@ COLLECT_CLUSTER = "cluster"
 
 class Cluster(Collector):
     """This collector creates groups based on the clustering of similarly distanced tokens"""
-    def __init__(self, dist= DISTANCE_TED, **kwargs):
+    def __init__(self, dist=DISTANCE_TED, **kwargs):
         """intializes the collector object
         """
         super(Cluster, self).__init__(COLLECT_CLUSTER)
@@ -39,31 +39,38 @@ class Cluster(Collector):
         -------
             nxn numpy array
         """
-        l = len(column)
-        distances = np.empty((l, l))
-        for u in range(l):
+        num_tokens = len(column)
+        distances = np.empty((num_tokens, num_tokens))
+        for u in range(num_tokens):
             # compute only half of the distances
-            for v in range(u, l):
+            for v in range(u, num_tokens):
                 distances[u][v] = distances[v][u] = self.distance.compute(column[u], column[v])
         return distances
 
     def collect(self, column):
-        """the collect method takes in a list of openclean_pattern.tokenize.token.Tokens and aligns them to minimize
-        the distance between that row and the others. The returned object is a dict of lists with each inner list
-        representing a group having the same no. of tokens
+        """The collect method takes in a list of openclean.function.token.base.Token's
+        and aligns them to minimize the distance between that row and the others.
+        The returned object is a dict of lists with each inner list representing
+        a group having the same no. of tokens.
 
         Parameters
         ----------
-        column: list of tuple[openclean_pattern.tokenize.token.Token]
+        column: list of iterable[openclean.function.token.base.Token]
             the column to align
 
         Returns
         -------
-             a dict of lists with key 'n' representing the cluster and each inner list representing row_indices of groups
-             with n tokens / row_index of part of the cluster
-       """
+         a dict of lists with key 'n' representing the cluster and each inner
+         list representing row_indices of groups with n tokens / row_index of
+         part of the cluster.
+        """
         distances = self._precompute_distance(column)
-        clustering = DBSCAN(metric="precomputed", n_jobs=-1, eps=self.eps, min_samples=self.min_samples).fit(distances)
+        clustering = DBSCAN(
+            metric="precomputed",
+            n_jobs=-1,
+            eps=self.eps,
+            min_samples=self.min_samples
+        ).fit(distances)
 
         groups = defaultdict()
         for i, n in enumerate(clustering.labels_):

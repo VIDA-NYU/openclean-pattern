@@ -8,73 +8,70 @@
 """Classes responsible for resolving various non-basic and basic data types into Tokens.
 """
 
-import pandas as pd, os, datamart_geo, re
+from abc import abstractmethod, ABCMeta
+from typing import Iterable, List, Optional, Tuple
+
+import datamart_geo
+import pandas as pd
+import os
 import sqlite3
 
+from openclean.data.refdata import RefStore
 from openclean_pattern.tokenize.prefix_tree import PrefixTree
 from openclean_pattern.datatypes.base import SupportedDataTypes
-from openclean_pattern.tokenize.token import Token
+from openclean.function.token.base import Token, TokenTransformer
 
-from abc import abstractmethod, ABCMeta
+import openclean.function.token.base as TT
 
 RESOURCES = '../../resources/data/'
 
+MONTHS = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sept',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+]
 
-class TypeResolver(metaclass=ABCMeta):
+WEEKDAYS = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thurs',
+    'Fri',
+    'Sat',
+    'Sun'
+]
+
+
+class TypeResolver(TokenTransformer, metaclass=ABCMeta):
     """This class resolves different data types"""
-
-    def resolve(self, column, tokenizer=None):
-        """resolves the rows in the column into their type representations
-
-        Parameters
-        ----------
-        column: list of lists/tuples of [str, openclean_pattern.tokenize.token.Tokens]
-            list of column values
-        tokenizer: openclean_pattern.tokenize.base.Tokenizer
-            Tokenizer to use as part of the encoding
-
-        Returns
-        -------
-        list of tupled tokens
-        """
-        if tokenizer is None:
-            from openclean_pattern.tokenize.regex import RegexTokenizer
-            tokenizer = RegexTokenizer(type_resolver=self)
-        else:
-            tokenizer.type_resolver = self
-
-        encoded = tokenizer.encode(column)
-        return encoded
-
-    @abstractmethod
-    def resolve_row(self, rowidx, row, tokenizer):
-        """returns the basic / non-basic data type augmented row. this can be a combination of str
-        and openclean_pattern.tokenize.token.Tokens
-
-        Parameters
-        ----------
-        rowidx: int
-            row id
-        row: str/tuple[str]
-            row to tokenize and resolve tokens against the masterdata
-        tokenizer: callable (Tokenizer.tokenize)
-            tokenizes the string row
-
-        Returns
-        -------
-            tuple[openclean_pattern.tokenize.token.Token]
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_vocabulary(self):
-        """gets the data in used to build the resolver if any
-
-        Returns
-        -------
-            list or nothing if basic
-        """
-        raise NotImplementedError()
 
     @staticmethod
     def gap(rowidx):
@@ -87,9 +84,31 @@ class TypeResolver(metaclass=ABCMeta):
 
         Returns
         -------
-            Token
+        Token
         """
-        return Token(regex_type=SupportedDataTypes.GAP, value='', rowidx=rowidx)
+        return Token(token_type=SupportedDataTypes.GAP, value='', rowidx=rowidx)
+
+    @abstractmethod
+    def resolve(self, tokens: List[Token]) -> List[Token]:
+        """returns the basic / non-basic data type augmented row. this can be a
+        combination of str and openclean.function.token.base.Token's.
+
+        Patameters
+        ----------
+        tokens: list of openclean.function.token.base.Token
+            List of string tokens.
+
+        Returns
+        -------
+        list of openclean.function.token.base.Token
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    def transform(self, tokens: List[Token]) -> List[Token]:
+        """The transform method of the token transformer is a synonym for the
+        type resolve function.
+        """
+        return self.resolve(tokens=tokens)
 
 
 class DefaultTypeResolver(TypeResolver):
@@ -101,11 +120,11 @@ class DefaultTypeResolver(TypeResolver):
 
     def __init__(self, interceptors=None):
         """ Initializes the DefaultTypeResolver.
-        
+
         Parameters
         ----------
-            interceptors: List[TypeResolver]
-                the type resolvers for non-basic resolution
+        interceptors: List[TypeResolver]
+            the type resolvers for non-basic resolution
         """
         if interceptors is None:
             interceptors = []
@@ -119,90 +138,65 @@ class DefaultTypeResolver(TypeResolver):
         interceptors.append(BasicTypeResolver())
         self.interceptors = interceptors
 
-    def resolve_row(self, rowidx, row, tokenizer):
+    def resolve(self, tokens: List[Token]) -> List[Token]:
         """passes through all the middlewares and adding found non-basic types and finally through the
-        BasicTypeResolver
-        """
-        for mw in self.interceptors:
-            row = mw.resolve_row(rowidx, row, tokenizer)
-        return row
+        BasicTypeResolver.
 
-    def get_vocabulary(self):
-        """gets the data in used to build the resolver
+        Patameters
+        ----------
+        tokens: list of openclean.function.token.base.Token
+            List of string tokens.
 
         Returns
         -------
-            nothing
+        list of openclean.function.token.base.Token
         """
-        pass
+        for mw in self.interceptors:
+            tokens = mw.resolve(tokens)
+        return tokens
 
 
 class BasicTypeResolver(TypeResolver):
     """ Class to resolve to the supported basic types
-            STRING = STRING_REP = '\W+'
+            STRING = STRING_REP = '\\W+'
             ALPHA = ALPHA_REP = 'ALPHA'
             ALPHANUM = ALPHANUM_REP = 'ALPHANUM'
             DIGIT = DIGIT_REP = 'NUMERIC'
             PUNCTUATION = PUNCTUATION_REP = 'PUNC'
             GAP = 'G'
-            SPACE_REP = '\S'
+            SPACE_REP = '\\S'
             OPTIONAL_REP = '?'
     """
 
-    def resolve_row(self, rowidx, row, tokenizer):
-        """returns the data type
+    def resolve(self, tokens: List[Token]) -> List[Token]:
+        """Annotate tokens of type ANY with one of the default token types.
 
-        Parameters
+        Patameters
         ----------
-        rowidx: int
-            row id
-        row: tuple[str]
-            row to tokenize and resolve tokens against the masterdata
-        tokenizer: callable (Tokenizer.tokenize)
-            tokenizes the string row
+        tokens: list of openclean.function.token.base.Token
+            List of string tokens.
 
         Returns
         -------
-            tuple[openclean_pattern.tokenize.token.Token]
+        list of openclean.function.token.base.Token
         """
-        if isinstance(row, str):
-            row = [row]
-
         resolved = list()
-        for element in row:
-            # If it isn't already a Token (from some other resolver)
-            if not isinstance(element, Token):
-                if isinstance(element, str):
-                    tokenized_row = tokenizer(rowidx, element)
+        for token in tokens:
+            # Only consider tokens of type ANY
+            if token.regex_type == TT.ANY:
+                if token.isdigit():
+                    token.regex_type = SupportedDataTypes.DIGIT
+                elif token.isalpha():
+                    token.regex_type = SupportedDataTypes.ALPHA
+                elif token.isalnum():
+                    token.regex_type = SupportedDataTypes.ALPHANUM
+                elif token.isspace():
+                    token.regex_type = SupportedDataTypes.SPACE_REP
                 else:
-                    raise ValueError("invalid token type. Acceptable types: str or {}".format(Token.__class__))
-
-                for token in tokenized_row:
-                    if token.isdigit():
-                        type = SupportedDataTypes.DIGIT
-                    elif token.isalpha():
-                        type = SupportedDataTypes.ALPHA
-                    elif token.isalnum():
-                        type = SupportedDataTypes.ALPHANUM
-                    elif token.isspace():
-                        type = SupportedDataTypes.SPACE_REP
-                    else:
-                        type = SupportedDataTypes.PUNCTUATION
-                    token = Token(regex_type=type, value=token, rowidx=rowidx)
-                    resolved.append(token)
-            else:
-                resolved.append(element)
-
-        return tuple(resolved)
-
-    def get_vocabulary(self):
-        """gets the data in used to build the resolver
-
-        Returns
-        -------
-            nothing
-        """
-        pass
+                    token.regex_type = SupportedDataTypes.PUNCTUATION
+            resolved.append(token)
+        # Return modified token list.
+        return resolved
 
 
 class AdvancedTypeResolver(TypeResolver, metaclass=ABCMeta):
@@ -211,148 +205,95 @@ class AdvancedTypeResolver(TypeResolver, metaclass=ABCMeta):
     to enhance performance
      """
 
-    def __init__(self, words):
+    def __init__(self, vocabulary: Iterable[Tuple[Iterable[str], str]], ignore_case: Optional[bool] = True):
         """initializes the prefix tree
 
         Parameters
-        ---------
-        words: list
-            list of words for the prefix tree
-        """
-        self.words = words
-        self.pt = PrefixTree(words)
-
-    def resolve_row(self, rowidx, row, tokenizer):
-        """idenfifier non-basic data types in the tokenized_row and replaces them with Tokens.
-
-        Parameters
         ----------
-        rowidx: int
-            row id
-        row: tuple[str]
-            row to tokenize and resolve tokens against the masterdata
-        tokenizer: callable (Tokenizer.tokenize)
-            tokenizes the string row parts
-
-        Returns
-        -------
-            tuple[str, openclean_pattern.tokenize.token.Token]
+        vocabulary: Iterable
+            Vocabulary to build tree from. Different lists of words in the
+            vocabulary are associated with a type label.
+        ignore_case: bool, default=True
+            Perform case-insensitive matching if True.
         """
-        # todo: support ignoring punctuation when extracting prefixes from row
-        # convert string to list
-        if isinstance(row, str):
-            row = [row]
+        self.pt = PrefixTree(vocabulary=vocabulary, ignore_case=ignore_case)
 
-        # if list is e.g. [str, Tok, str]
-        prefixes = list()
-        for element in row:
-            if isinstance(element, str):
-                tokenized_element = tokenizer(rowidx, element)
-                pxs = self.find_prefixes(list(tokenized_element))
-                for px in pxs:
-                    prefixes.append(px)
-
-        # sort prefixes by length
-        prefixes = sorted(prefixes, key=lambda x: len(x), reverse=True)
-
-        # go through the elements and replace str elements with tokens from found prefixes
-        p = 0
-        while p < len(prefixes):
-            prefix_processed_row = list()
-            for element in row:
-                if not isinstance(element, Token):
-                    prefix = prefixes[p]
-                    splits = re.split(r'(\b' + prefix + r'\b)', element)
-                    split_row = list()
-                    for split in splits:
-                        if split == prefix:
-                            ctype = self.get_label(split)
-                            split_row.append(Token(regex_type=ctype,
-                                                   value=split,
-                                                   rowidx=rowidx))
-                        elif split != '':
-                            split_row.append(split)
-                    prefix_processed_row.append(split_row)
-                else:
-                    prefix_processed_row.append([element])
-            row = [item for sublist in prefix_processed_row for item in sublist]
-            p += 1
-
-        return tuple(row)
-
-    def get_vocabulary(self):
-        """gets the data used to build the tree
-
-        Returns
-        -------
-            list
-        """
-        return self.words
-
-    def find_prefixes(self, tokenized_row):
+    def find_prefixes(self, tokens: List[Token]) -> List[Token]:
         """lookups tokens in prefix tree for matches and sorts the prefixes by descending order in no. of tokens
 
         Parameters
         ----------
-        tokenized_row: list of tokens
-            the tokens to search for in the prefix tree
+        tokens: list of openclean.function.token.base.Token
+            The tokens to search for in the prefix tree.
+
+        Returns
+        -------
+        list of openclean.function.token.base.Token
         """
-        prefixes = self.pt.prefix_search(list(tokenized_row), ignore_punc=True)
-        return sorted(prefixes, key=lambda x: len(x), reverse=True)
+        result = list()
+        while tokens:
+            pidx, label = self.pt.prefix_search(tokens, ignore_punc=True)
+            if pidx is None:
+                result.append(tokens[0])
+                pidx = 0
+            else:
+                value = ' '.join(tokens[:pidx + 1]).strip()
+                token = Token(value=value, token_type=label, rowidx=tokens[0].rowidx)
+                result.append(token)
+            tokens = tokens[pidx + 1:]
+        return result
 
-    @abstractmethod
-    def get_label(self, value):
-        """Gets non-basic type for the detected prefix from the vocabulary.
+    def resolve(self, tokens: List[Token]) -> List[Token]:
+        """idenfifier non-basic data types in the tokenized_row and replaces them with Tokens.
 
-        Parameters
+        Patameters
         ----------
-        value: str
-            prefix found in the row
+        tokens: list of openclean.function.token.base.Token
+            List of string tokens.
+
+        Returns
+        -------
+        list of openclean.function.token.base.Token
         """
-        raise NotImplementedError()
+        resolved = list()
+        # Find prefix matches for each sublist of consecutive tokens of
+        # type ANY.
+        candidates = list()
+        for token in tokens:
+            if token.type() == TT.ANY:
+                candidates.append(token)
+            else:
+                if len(candidates) > 0:
+                    resolved.extend(self.find_prefixes(candidates))
+                    candidates = list()
+                resolved.append(token)
+        if len(candidates) > 0:
+            resolved.extend(self.find_prefixes(candidates))
+        return resolved
 
 
 class DateResolver(AdvancedTypeResolver):
-    """Resolves date times"""
+    """Resolves date times."""
 
-    def __init__(self):
-        """Initializes the datetime resolver. Preloads data about weekdays and months and builds a prefix tree
-        """
-        # todo: add pandas datetime inference?
-        self.weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Mon', 'Tue',
-                         'Wed', 'Thurs', 'Fri', 'Sat', 'Sun']
-        self.months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
-                       'November', 'December',
-                       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Sep', 'Oct', 'Nov', 'Dec']
-
-        self.wd = list()
-        [self.wd.append(w.lower()) for w in self.weekdays]
-        self.mo = list()
-        [self.mo.append(m.lower()) for m in self.months]
-
-        self.words = self.wd + self.mo
-        super(DateResolver, self).__init__(self.words)
-
-    def get_label(self, value):
-        """Gets non-basic type for the detected prefix from the master vocabulary.
+    def __init__(self, ignore_case: Optional[bool] = True):
+        """Initializes the datetime resolver. Preloads data about weekdays and
+        months and builds a prefix tree.
 
         Parameters
         ----------
-        value: str
-            prefix found in the row
+        ignore_case: bool, default=True
+            Perform case-insensitive matching if True.
         """
-        if value in self.wd:
-            return SupportedDataTypes.WEEKDAY
-        if value in self.mo:
-            return SupportedDataTypes.MONTH
-        else:
-            raise KeyError("{} missing in vocabulary but present in PrefixTree!".format(value))
+        super(DateResolver, self).__init__(
+            vocabulary=[(WEEKDAYS, SupportedDataTypes.WEEKDAY), (MONTHS, SupportedDataTypes.MONTH)],
+            ignore_case=ignore_case
+        )
 
 
 class GeoSpatialResolver(AdvancedTypeResolver):
     """Resolves geo spatial types"""
 
-    def __init__(self, levels=None):
+    def __init__(self, levels=None, ignore_case: Optional[bool] = True):
         """Initializes the geospatial resolver. Preloads data from datamart_geo and builds a prefix tree
 
         Parameters
@@ -373,6 +314,8 @@ class GeoSpatialResolver(AdvancedTypeResolver):
             raise ValueError('expected list or integers')
 
         # Download data
+        # Note: We should try to use RefData here if possible. Also, the RESOURCES
+        # folder will not be available when installing this as package!
         GEOPATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), RESOURCES)
         datamart_geo.GeoData.download(GEOPATH, update=False)
 
@@ -411,64 +354,37 @@ class GeoSpatialResolver(AdvancedTypeResolver):
 class BusinessEntityResolver(AdvancedTypeResolver):
     """Resolves Business Entity Suffixes"""
 
-    def __init__(self):
+    def __init__(self, ignore_case: Optional[bool] = True):
         """Initializes the business entity resolver. Preloads data about company suffixes and builds a prefix tree
         """
         # extracted using regex from https://www.harborcompliance.com/information/company-suffixes
-        self.words = pd.read_csv(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), RESOURCES, 'company_suffixes.csv'),
-            squeeze=True).str.replace('.', '').str.lower().tolist()  # replace dots for all abbreviations
-
-        super(BusinessEntityResolver, self).__init__(self.words)
-
-    def get_label(self, value):
-        """Gets non-basic type for the detected prefix from the master vocabulary.
-
-        Parameters
-        ----------
-        value: str
-            prefix found in the row
-        """
-        if value in self.words:
-            return SupportedDataTypes.BE
-        else:
-            raise KeyError("{} missing in vocabulary but present in PrefixTree!".format(value))
+        refdata = RefStore()
+        values = refdata\
+            .load('company_suffixes', auto_download=True)\
+            .distinct('company_suffix')
+        # Replace dots for all abbreviations
+        business_suffixes = [v.replace('.', '').lower() for v in values]
+        super(BusinessEntityResolver, self).__init__(
+            vocabulary=[(set(business_suffixes), SupportedDataTypes.BE)]
+        )
 
 
 class AddressDesignatorResolver(AdvancedTypeResolver):
     """ Resolves street abbreviations and suds"""
 
-    def __init__(self):
+    def __init__(self, ignore_case: Optional[bool] = True):
         """ initializes address designator resolver by preloading street and sud dat"""
         self.dtype = ''
         # https://pe.usps.com/text/pub28/28apc_002.htm
-        street = pd.read_csv(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), RESOURCES, 'street_abvs.csv'))
+        refdata = RefStore()
+        street = refdata.load('usps:street_abbrev', auto_download=True).df()
         street = set(street.fillna('').applymap(str.lower).values.flatten())
         street.discard('')
-        self.street = list(street)
-
+        street = set(street)
+        vocabulary = [(street, SupportedDataTypes.STREET)]
         # https://pe.usps.com/text/pub28/28apc_003.htm
-        sud = pd.read_csv(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), RESOURCES, 'secondary_unit_designtor.csv'))
+        sud = refdata.load('usps:secondary_unit_designators', auto_download=True).df()
         sud = set(sud.fillna('').applymap(str.lower).values.flatten())
         sud.discard('')
-        self.sud = list(sud)
-
-        self.words = self.street + self.sud
-        super(AddressDesignatorResolver, self).__init__(self.words)
-
-    def get_label(self, value):
-        """Gets non-basic type for the detected prefix from the master vocabulary.
-
-        Parameters
-        ----------
-        value: str
-            prefix found in the row
-        """
-        if value in self.street:
-            return SupportedDataTypes.STREET
-        if value in self.sud:
-            return SupportedDataTypes.SUD
-        else:
-            raise KeyError("{} missing in vocabulary but present in PrefixTree!".format(value))
+        vocabulary.append((set(sud).difference(street), SupportedDataTypes.SUD))
+        super(AddressDesignatorResolver, self).__init__(vocabulary=vocabulary, ignore_case=ignore_case)
