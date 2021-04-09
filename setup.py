@@ -18,7 +18,7 @@ install_requires = [
     'pandas>=1.0.0',
     'datamart_geo==0.2',
     'pygtrie==2.3.3',
-    'openclean-core'
+    'openclean-core>=0.3.0'
 ]
 
 # todo: add

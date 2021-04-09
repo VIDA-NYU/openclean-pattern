@@ -7,14 +7,14 @@
 
 
 from abc import ABCMeta, abstractmethod
-from openclean_pattern.datatypes.resolver import TypeResolver
+from openclean_pattern.datatypes.base import create_gap_token
 from openclean_pattern.tokenize.token import Token
 
 from typing import List, Dict, Tuple, Any
 
 
 class Aligner(metaclass=ABCMeta):
-    """aligns the token objects and returns groups of aligned token groups"""
+    """Aligns the token objects and returns groups of aligned token groups"""
 
     def __init__(self, alignment_type: str):
         """intializes the Aligner object
@@ -27,9 +27,11 @@ class Aligner(metaclass=ABCMeta):
         self.alignment_type = alignment_type
 
     @abstractmethod
-    def align(self, column: List[List[Token]], groups: Dict):
-        """Takes in the column and the groups and returns an aligned version of each group by adding Gap tokens to each row.
-        A dict[int, Tuple(Tokens)] is returned with the aligned values
+    def align(self, column, groups):
+        """Takes in the column and the groups and returns an aligned version of
+        each group by adding Gap tokens to each row.
+
+        A list[Tuple(Tokens)] is returned with the aligned values
 
         Parameters
         ----------
@@ -41,7 +43,7 @@ class Aligner(metaclass=ABCMeta):
         -------
             dict[int, Tuple(Tokens)]
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
 
 class Sequence(tuple):
@@ -81,10 +83,10 @@ class Sequence(tuple):
         s = list()
         for i, token in enumerate(self):
             if position == i:
-                s.append(TypeResolver.gap())
+                s.append(create_gap_token())
             s.append(self[i])
         if position > len(self)-1:
-            s.append(TypeResolver.gap())
+            s.append(create_gap_token())
 
         return Sequence(s)
 

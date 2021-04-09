@@ -1,5 +1,5 @@
 pandas
 datamart_geo
 pygtrie==2.3.3
-openclean-core>=0.1.0
 scikit-bio
+openclean-core>=0.3.0

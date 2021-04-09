@@ -17,15 +17,15 @@ def test_datetype_resolver(dates):
 
     # a tokenizer that only detects non-basic dates not basic
     rt = RegexTokenizer(type_resolver=dt)
-    encoded = rt.encode(dates.to_list())
+    tokens = rt.tokens(dates.to_list()[0])
 
     # ["Monday, 21st March, 2019"],
-    assert encoded[0][0].regex_type == SupportedDataTypes.WEEKDAY
-    assert encoded[0][1] == ','
-    assert encoded[0][2] == ' '
-    assert encoded[0][3] == '21st'
-    assert encoded[0][4] == ' '
-    assert encoded[0][5].regex_type == SupportedDataTypes.MONTH
-    assert encoded[0][6] == ','
-    assert encoded[0][7] == ' '
-    assert encoded[0][8] == '2019'
+    assert tokens[0].regex_type == SupportedDataTypes.WEEKDAY
+    assert tokens[1] == ','
+    assert tokens[2] == ' '
+    assert tokens[3] == '21st'
+    assert tokens[4] == ' '
+    assert tokens[5].regex_type == SupportedDataTypes.MONTH
+    assert tokens[6] == ','
+    assert tokens[7] == ' '
+    assert tokens[8] == '2019'

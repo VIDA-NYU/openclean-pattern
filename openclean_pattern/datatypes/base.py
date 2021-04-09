@@ -7,22 +7,37 @@
 
 """Supported Data types and their string representations"""
 
-import enum
+import openclean.function.token.base as TT
 
 
-class SupportedDataTypes(enum.Enum):
+def create_gap_token(rowidx=None):
+    """returns a gap Token
+
+    Parameters
+    ----------
+    rowidx: int (Optional)
+        row id
+
+    Returns
+    -------
+    Token
+    """
+    return TT.Token(token_type=SupportedDataTypes.GAP, value='', rowidx=rowidx)
+
+
+class SupportedDataTypes:
     """
     Enum class for all supported datatypes and their representations
     """
     # BASIC TYPES
     STRING = STRING_REP = '\\W+'
-    ALPHA = ALPHA_REP = 'ALPHA'
-    ALPHANUM = ALPHANUM_REP = 'ALPHANUM'
-    DIGIT = DIGIT_REP = 'NUMERIC'
-    PUNCTUATION = PUNCTUATION_REP = 'PUNC'
-    GAP = 'G' # ALIGNMENT GAP CHARACTER
+    ALPHA = ALPHA_REP = TT.ALPHA
+    ALPHANUM = ALPHANUM_REP = TT.ALPHANUM
+    DIGIT = DIGIT_REP = TT.DIGIT
+    PUNCTUATION = PUNCTUATION_REP = TT.PUNCTUATION
+    GAP = 'GAP'  # ALIGNMENT GAP CHARACTER
     SPACE_REP = '\\S'
-    OPTIONAL_REP = '?' # POST REGEX OPTIONAL CHARACTER
+    OPTIONAL_REP = '?'  # POST REGEX OPTIONAL CHARACTER
 
     # SUPPORTED NONBASIC TYPES
     MONTH = 'MONTH'
@@ -33,7 +48,7 @@ class SupportedDataTypes(enum.Enum):
     COUNTY = 'COUNTY'
     BE = 'BUSINESS'
     STREET = 'STREET'
-    SUD = 'SUD' #SECONDARY_UNIT_DESIGNATOR
+    SUD = 'SUD'  # SECONDARY_UNIT_DESIGNATOR
 
     # DATAMART_GEO TYPES
     ADMIN_LEVEL_0 = 'ADMIN_0'

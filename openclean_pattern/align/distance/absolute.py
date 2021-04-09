@@ -34,6 +34,4 @@ class AbsoluteDistance(Distance):
         -------
             float
         """
-        if not isinstance(u, tuple) or not isinstance(v, tuple):
-            raise TypeError("compute expects tuple inputs")
         return abs(len(u) - len(v))

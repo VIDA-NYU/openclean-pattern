@@ -9,7 +9,7 @@
 
 from openclean_pattern.align.base import Aligner
 from openclean_pattern.datatypes.resolver import TypeResolver
-from openclean_pattern.datatypes.base import SupportedDataTypes
+from openclean_pattern.datatypes.base import SupportedDataTypes, create_gap_token
 from openclean_pattern.align.distance.factory import DistanceFactory, DISTANCE_TED
 from openclean_pattern.align.base import Sequence, Alignment
 
@@ -125,13 +125,13 @@ class NeedlemanWunschAligner(Aligner):
         a, b = list(), list()
         for i, _ in alignment:
             if i is GAP:
-                a.append(TypeResolver.gap(i))
+                a.append(create_gap_token(i))
             else:
                 a.append(x[i])
 
         for _, j in alignment:
             if j is GAP:
-                b.append(TypeResolver.gap(j))
+                b.append(create_gap_token(j))
             else:
                 b.append(y[j])
 

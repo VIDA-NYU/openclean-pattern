@@ -24,21 +24,24 @@ class Group(Collector):
         """
         super(Group, self).__init__(COLLECT_GROUP)
 
-    def collect(self, column: List[List[Token]]) -> Dict[int, List]:
-        """the collect method takes in a list of openclean_pattern.tokenize.token.Tokens and aligns them to minimize
-        the distance between that row and the others. The returned object is a dict of lists with each inner list
-        representing a group with the same no. of tokens
+    def collect(self, column):
+        """The collect method takes in a list of openclean.function.token.base.Token's
+        and aligns them to minimize the distance between that row and the others.
+        The returned object is a dict of lists with each inner list representing
+        a group having the same no. of tokens.
+
 
         Parameters
         ----------
-        column: list of tuple[openclean_pattern.tokenize.token.Token]
+        column: list of iterable[openclean.function.token.base.Token]
             the column to align
 
         Returns
         -------
-             a dict of lists with key 'n' representing the cluster and each inner list representing row_indices of groups
-             with n tokens / row_index of part of the cluster
-       """
+        a dict of lists with key 'n' representing the cluster and each inner
+        list representing row_indices of groups with n tokens / row_index of
+        part of the cluster.
+        """
         groups = defaultdict()
         for i, row in enumerate(column):
             n = len(row)

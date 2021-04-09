@@ -7,10 +7,12 @@
 
 from openclean_pattern.datatypes.base import SupportedDataTypes
 
+
 class Token(str):
     '''
     internal representation of each token with key information intact
     '''
+
     def __new__(cls, value, *args, **kwargs):
         # explicitly only pass value to the str constructor because strs are mutable and wont support other attributes
         return super(Token, cls).__new__(cls, value)

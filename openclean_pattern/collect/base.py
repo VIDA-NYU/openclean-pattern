@@ -26,18 +26,22 @@ class Collector(metaclass=ABCMeta):
         self.collector_type = collector_type
 
     @abstractmethod
-    def collect(self, column: List[List[Token]]) -> Dict[int, List]:
-        """the collect method takes in a list of Tokens and collects similar rows using a collection strategy.
-         The returned object is a dict of lists with each inner list representing a group of rows
+    def collect(self, column):
+        """The collect method takes in a list of openclean.function.token.base.Token's
+        and aligns them to minimize the distance between that row and the others.
+        The returned object is a dict of lists with each inner list representing
+        a group having the same no. of tokens.
 
         Parameters
         ----------
-        column: list of list[Token]
+        column: list of iterable[openclean.function.token.base.Token]
             the column to align
 
         Returns
         -------
-             a dict of lists with key 'n' representing the cluster and each inner list representing row_indices of groups
-             with n tokens / row_index of part of the cluster
-       """
-        raise NotImplementedError()
+        a dict of lists with key 'n' representing the cluster and each inner
+        list representing row_indices of groups with n tokens / row_index of
+        part of the cluster.
+        """
+        raise NotImplementedError()  # pragma: no cover
+

@@ -8,7 +8,7 @@
 """implements the progressive aligner"""
 
 from openclean_pattern.align.base import Aligner, Sequence, Alignment
-from openclean_pattern.datatypes.base import SupportedDataTypes
+from openclean_pattern.datatypes.base import SupportedDataTypes, create_gap_token
 from openclean_pattern.datatypes.resolver import TypeResolver
 from openclean_pattern.collect.neighbor import NeighborJoin
 from openclean_pattern.align.distance.tree_edit import TreeEditDistance
@@ -80,7 +80,7 @@ class ProgressiveAligner(Aligner):
         C = len(aln[0]) if isinstance(aln, Alignment) else len(aln)
 
         pairs = defaultdict(list)
-        [pairs[-1].append(TypeResolver.gap(i)) for i in range(R)]
+        [pairs[-1].append(create_gap_token(i)) for i in range(R)]
 
         for j in range(C):
             if isinstance(aln, Alignment):

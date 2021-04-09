@@ -7,7 +7,7 @@
 
 """implements a naive padding aligner"""
 
-from openclean_pattern.datatypes.resolver import TypeResolver
+from openclean_pattern.datatypes.base import create_gap_token
 from openclean_pattern.align.base import Aligner
 
 
@@ -52,7 +52,7 @@ class Padder(Aligner):
 
             for c, id in zip(col, idx):
                 while len(c) < size:
-                    c = (*c, TypeResolver.gap(rowidx=id))
+                    c = (*c, create_gap_token(rowidx=id))
 
                 if aligned[id] is not None:
                     raise KeyError("found duplicate aligned tokens({new} and {old}) for same row id: {id}".format(id=id, new=c, old=aligned[id]))

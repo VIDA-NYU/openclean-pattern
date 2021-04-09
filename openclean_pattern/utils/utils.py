@@ -13,12 +13,8 @@ import random
 import bisect
 from collections import Counter
 
-from openclean_pattern.tokenize.token import Token
-from openclean_pattern.datatypes.base import SupportedDataTypes
 
-
-### Comparators
-
+# -- Comparators --------------------------------------------------------------
 
 class Comparator(metaclass=ABCMeta):
     """Compares different dataitems
@@ -45,30 +41,6 @@ class Comparator(metaclass=ABCMeta):
         raise NotImplementedError()
 
 
-class TokenComparator(Comparator):
-    """compare 2 tokens for subset matches (e.g. alpha is a subset of alphanum)"""
-
-    def compare(self, a, b, meta=None):
-        if not isinstance(a, Token) or not isinstance(b, Token):
-            raise TypeError("expected Tokens")
-
-        if a.value == b.value or a.regex_type == b.regex_type:
-            return True
-        # (ALPHA, DIGIT) -> ALPHANUM
-        elif (a.regex_type == SupportedDataTypes.ALPHA or a.regex_type == SupportedDataTypes.DIGIT) \
-                and b.regex_type == SupportedDataTypes.ALPHANUM:
-            return True
-        elif (b.regex_type == SupportedDataTypes.ALPHA or b.regex_type == SupportedDataTypes.DIGIT) \
-                and a.regex_type == SupportedDataTypes.ALPHANUM:
-            return True
-        # (SPACE, PUNC) -> PUNC
-        elif (a.regex_type == SupportedDataTypes.SPACE_REP or b.regex_type == SupportedDataTypes.SPACE_REP) and \
-                (a.regex_type == SupportedDataTypes.PUNCTUATION or b.regex_type == SupportedDataTypes.PUNCTUATION):
-            return True
-
-        return False
-
-
 class StringComparator(Comparator):
     """Class of useful string comparison methods
     """
@@ -76,8 +48,9 @@ class StringComparator(Comparator):
     @staticmethod
     def compare_strings(s1, s2, ambiguous_char='X'):
         """
-        Compares two strings in sequence of characters and replaces distinct characters with ambiguous character. Then
-        returns the new string along with an ambiguity ratio
+        Compares two strings in sequence of characters and replaces distinct
+        characters with ambiguous character. Then returns the new string along
+        with an ambiguity ratio
 
         Parameters
         ----------
@@ -125,26 +98,11 @@ class StringComparator(Comparator):
         return anslist
 
 
-class PatternComparator(Comparator):
-    def compare(self, a, b, meta=None):
-        raise NotImplementedError()
-    # def compare(self, pattern, token):(self, pattern, width, token):
-    #     if len(token) >= width[0] and len(token) <= width[1]:
-    #         for i in range(min(len(token), len(pattern))):
-    #             if pattern[i].upper() != token[i].upper():  # not case sensitive?
-    #                 if pattern[i].upper() == 'X':
-    #                     continue
-    #                 else:
-    #                     return False
-    #         return True
-    #     return False
-
-
 def has_numbers(inputString):
     return bool(re.search(r'\d', inputString))
 
 
-### Samplers
+# -- Samplers -----------------------------------------------------------------
 
 class Sampler(metaclass=ABCMeta):
     """Class to sample an input iterable. This was necessary because pandas.sample sampling can be slow."""
@@ -308,40 +266,7 @@ class Distinct(Sampler):
         return list(set(self.iterable))
 
 
-### Helper methods
-
-
-def stringify(tokens):
-    """ Accepts a list of tokens (strings and Tokens) and combines the strings together breaking it by any
-    Token objects in between
-    
-    Parameters
-    ----------
-    tokens : list of str and openclean_pattern.tokenize.token.Token
-        the values to stringify
-                
-    Returns
-    -------
-        list
-    """
-    stringified = list()
-    p = 0
-    val = ''
-    while p < len(tokens):
-        if isinstance(tokens[p], str):
-            val += tokens[p]
-        elif isinstance(tokens[p], Token):
-            if val != '':
-                stringified.append(val)
-            stringified.append(tokens[p])
-            val = ''
-        p += 1
-
-    if val != '':
-        stringified.append(val)
-
-    return stringified
-
+# -- Helper methods -----------------------------------------------------------------
 
 def list_contains_list(o, tree_types=list):
     """checks is list contains more lists"""

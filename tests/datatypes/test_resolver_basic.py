@@ -17,8 +17,7 @@ def test_basic_resolver(dates):
 
     rt = RegexTokenizer()
     at = BasicTypeResolver()
-    encoded = at.resolve_row(row, dates.iloc[row][0], rt._tokenize_value)
-
+    encoded = at.resolve(rt.tokens(value=dates.iloc[row], rowidx=row))
     # ["Monday, 21st March, 2019"],
     assert encoded[0].regex_type == SupportedDataTypes.ALPHA
     assert encoded[1].regex_type == SupportedDataTypes.PUNCTUATION
@@ -29,3 +28,6 @@ def test_basic_resolver(dates):
     assert encoded[6].regex_type == SupportedDataTypes.PUNCTUATION
     assert encoded[7].regex_type == SupportedDataTypes.SPACE_REP
     assert encoded[8].regex_type == SupportedDataTypes.DIGIT
+    # Assert that all tokens have row index 0.
+    for token in encoded:
+        assert token.rowidx == 0

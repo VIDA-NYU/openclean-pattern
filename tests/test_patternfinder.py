@@ -7,10 +7,10 @@
 
 """unit tests for the OpencleanPatternFinder Class"""
 
+from openclean_pattern.datatypes.base import SupportedDataTypes as DT
 from openclean_pattern.opencleanpatternfinder import OpencleanPatternFinder
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 
-import pytest
 
 def test_patternfinder_find(business):
     """test the patternfinder find method"""
@@ -23,7 +23,7 @@ def test_patternfinder_find(business):
     patterns = pf.find(series=business['Address '])
     assert len(patterns) == 4
 
-    types = ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
+    types = [DT.DIGIT, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA]
     assert len(patterns[9]) == 1
     for k, pat in patterns[9].items():
         for elements, type in zip(pat.container, types):
@@ -39,7 +39,7 @@ def test_patternfinder_find(business):
     patterns = pf.find(series=business['Address '])
     assert len(patterns) == 4
 
-    types = ['DIGIT', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA', 'SPACE_REP', 'ALPHA']
+    types = [DT.DIGIT, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA, DT.SPACE_REP, DT.ALPHA]
     assert len(patterns[9]) == 1
     for k, pat in patterns[9].items():
         for elements, type in zip(pat.container, types):

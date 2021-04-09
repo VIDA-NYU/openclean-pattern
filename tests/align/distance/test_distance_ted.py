@@ -13,7 +13,7 @@ from openclean_pattern.tokenize.factory import DefaultTokenizer
 
 def test_distance_ted_compute(dates):
     test = '12TH JANUARY 2011'
-    test_tokens = DefaultTokenizer()._encode_value(0, test)
+    test_tokens = DefaultTokenizer().tokens(rowidx=0, value=test)
     train_tokens = DefaultTokenizer().encode(dates)
 
     dist = DistanceFactory.create('TED')
