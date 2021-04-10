@@ -16,7 +16,8 @@ from setuptools import setup, find_packages
 # todo: add
 install_requires = [
     'pandas>=1.0.0',
-    'datamart_geo==0.2',
+    'numpy',
+    'datamart_geo>=0.2.1',
     'pygtrie==2.3.3',
     'openclean-core>=0.3.0'
 ]
