@@ -13,12 +13,6 @@ import re
 
 from setuptools import setup, find_packages
 
-import sys
-import subprocess
-
-# implement pip as a subprocess to install numpy for scikit-bio. It breaks otherwise, see: https://github.com/biocore/scikit-bio/issues/1671
-subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'numpy'])
-
 install_requires = [
     'pandas',
     'numpy',
