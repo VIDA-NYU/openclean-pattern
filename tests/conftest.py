@@ -16,6 +16,7 @@ BUSINESS = os.path.join(DIR, 'business.csv')
 CHECKINTIME = os.path.join(DIR, 'check-in-time.txt.gz')
 YEAR = os.path.join(DIR, 'year.txt.gz')
 SPECIMEN = os.path.join(DIR, 'specimen.txt.gz')
+URBAN = os.path.join(DIR, 'urban.csv')
 
 
 @pytest.fixture
@@ -61,3 +62,15 @@ def year():
         .select('term')\
         .sample(1000, random_state=42)\
         .to_df()['term']
+
+@pytest.fixture
+def urban():
+    """Load the urban dataset"""
+    test_data = stream(URBAN)\
+        .select(['Address ', 'Address Continued', 'City', 'State', 'Zip Code'])\
+        .to_df()
+
+    geo = test_data[['Address ', 'Address Continued', 'City', 'State', 'Zip Code']]
+    geo.loc[:, 'Full Address'] = test_data['Address '] + ',\n' + test_data['Address Continued'].fillna('') + '\n' + \
+                                 test_data['City'] + ', ' + test_data['State'] + ', ' + test_data['Zip Code']
+    return geo['Full Address'].to_list()

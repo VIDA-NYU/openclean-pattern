@@ -13,16 +13,21 @@ import re
 
 from setuptools import setup, find_packages
 
-# todo: add
+import sys
+import subprocess
+
+# implement pip as a subprocess to install numpy for scikit-bio. It breaks otherwise, see: https://github.com/biocore/scikit-bio/issues/1671
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'numpy'])
+
 install_requires = [
-    'pandas>=1.0.0',
+    'pandas',
     'numpy',
     'datamart_geo>=0.2.1',
     'pygtrie==2.3.3',
+    'scikit-bio',
     'openclean-core>=0.3.0'
 ]
 
-# todo: add
 tests_require = [
     'coverage>=5.0',
     'pytest',

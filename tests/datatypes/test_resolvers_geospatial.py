@@ -65,22 +65,16 @@ def test_multi_resolvers(business):
 
 
 # commented because time consuming
-def test_multi_resolvers_full():
+def test_multi_resolvers_full(urban):
     """
         test multiple resolvers in series: AD -> GEO -> AT
         """
     deft = DefaultTypeResolver(interceptors=[AddressDesignatorResolver(), GeoSpatialResolver(levels=[0, 1, 2])])
     rt = RegexTokenizer(type_resolver=deft)
 
-    import pandas as pd
-    test_data = pd.read_csv('/home/maqzi/PycharmProjects/openclean-pattern/resources/dev/urban.csv')
-    geo = test_data[['Address ', 'Address Continued', 'City', 'State', 'Zip Code']]
-    geo.loc[:, 'Full Address'] = test_data['Address '] + ',\n' + test_data['Address Continued'].fillna('') + '\n' + \
-                                 test_data['City'] + ', ' + test_data['State'] + ', ' + test_data['Zip Code']
+    encoded = rt.encode(urban)
 
-    encoded = rt.encode(geo['Full Address'].to_list())
-
-    # align the column
+    # group the column
     from openclean_pattern.collect.group import Group
 
     ga = Group()
@@ -92,14 +86,14 @@ def test_multi_resolvers_full():
     rws = DefaultRegexCompiler()
     compiled = rws.compile(encoded, grouped)
 
-    assert len(compiled) == 24
-    types = [[SupportedDataTypes.DIGIT, SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ADMIN_LEVEL_1, SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA,
-              SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.DIGIT],
-             [SupportedDataTypes.DIGIT, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA, SupportedDataTypes.SPACE_REP, SupportedDataTypes.STREET, SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA,
+    assert len(compiled) == 14
+    types = [[SupportedDataTypes.DIGIT, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA, SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA, SupportedDataTypes.PUNCTUATION,
+              SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA, SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.DIGIT],
+             [SupportedDataTypes.ALPHA, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA, SupportedDataTypes.SPACE_REP, SupportedDataTypes.DIGIT, SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA,
               SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA, SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.DIGIT],
              [SupportedDataTypes.DIGIT, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA, SupportedDataTypes.SPACE_REP, SupportedDataTypes.STREET, SupportedDataTypes.SPACE_REP, SupportedDataTypes.SUD,
               SupportedDataTypes.SPACE_REP, SupportedDataTypes.DIGIT, SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA, SupportedDataTypes.SPACE_REP, SupportedDataTypes.STREET,
-              SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ALPHA, SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.DIGIT]]
-    for i, t in zip([11, 15, 23], types):
+              SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.ADMIN_LEVEL_2, SupportedDataTypes.PUNCTUATION, SupportedDataTypes.SPACE_REP, SupportedDataTypes.DIGIT]]
+    for i, t in zip([13, 15, 23], types):
         for element, truth in zip(list(compiled[i].values())[0].container, t):
             assert element.element_type == truth
