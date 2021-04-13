@@ -190,7 +190,7 @@ class SingularRowPattern(OpencleanPattern):
             value = [value]
 
         if isinstance(value, list) or isinstance(value, tuple):
-            if len(value) == 1 and isinstance(value[0], str):
+            if len(value) == 1 and isinstance(value[0], str) and not isinstance(value[0], Token):
                 value = tokenizer.encode(value)[0]
             else:
                 for v in value:
