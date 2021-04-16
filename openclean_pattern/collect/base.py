@@ -7,9 +7,6 @@
 
 
 from abc import ABCMeta, abstractmethod
-from openclean_pattern.tokenize.token import Token
-
-from typing import List, Dict
 
 
 class Collector(metaclass=ABCMeta):

@@ -8,7 +8,7 @@
 
 from abc import ABCMeta, abstractmethod
 from openclean_pattern.datatypes.base import create_gap_token
-from openclean_pattern.tokenize.token import Token
+from openclean.function.token.base import Token
 
 from typing import List, Dict, Tuple, Any
 

@@ -12,7 +12,7 @@ from openclean_pattern.align.distance.factory import DistanceFactory
 from openclean_pattern.align.distance.tree_edit import DISTANCE_TED
 from openclean_pattern.align.base import Sequence
 from openclean_pattern.align.needlemanwunsch import NeedlemanWunschAligner
-from openclean_pattern.tokenize.token import Token
+from openclean.function.token.base import Token
 
 import numpy as np
 from skbio.tree import TreeNode

@@ -10,7 +10,7 @@
 from openclean_pattern.collect.base import Collector
 from openclean_pattern.align.distance.factory import DistanceFactory
 from openclean_pattern.align.distance.tree_edit import DISTANCE_TED
-from openclean_pattern.tokenize.token import Token
+from openclean.function.token.base import Token
 
 from collections import defaultdict
 from sklearn.cluster import DBSCAN

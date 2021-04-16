@@ -8,11 +8,8 @@
 """Collector class which naively groups by similar tokens and returns the groups"""
 
 from openclean_pattern.collect.base import Collector
-from openclean_pattern.tokenize.token import Token
 
 from collections import defaultdict
-
-from typing import List, Dict
 
 COLLECT_GROUP = "group"
 
