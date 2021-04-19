@@ -1,6 +1,6 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
@@ -11,6 +11,7 @@ from typing import Iterable, List, Optional, Tuple
 
 import pygtrie
 import string
+import warnings
 
 
 class PrefixTree(object):
@@ -35,7 +36,9 @@ class PrefixTree(object):
                     word = word.lower()
                 dom_word = self.trie._separator.join(word.split())
                 if dom_word in self.trie:
-                    raise ValueError("duplicate word '{}'".format(word))
+                    if self.trie[dom_word][1] != label:
+                        warnings.warn("duplicate pytrie entry '{}' with different label: '{}' found. Original label: {} is immutable, Ignoring duplicate.".format(word, label, self.trie[dom_word][1]))
+                    continue
                 self.trie[dom_word] = (word, label)
 
     def prefix_search(self, content_words: List[str], ignore_punc: Optional[bool] = True) -> Tuple[int, str]:

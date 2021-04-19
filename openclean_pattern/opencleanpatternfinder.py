@@ -1,6 +1,6 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
@@ -12,10 +12,12 @@ from openclean.function.token.base import Tokenizer
 from openclean_pattern.tokenize.factory import TokenizerFactory
 from openclean_pattern.tokenize.regex import TOKENIZER_DEFAULT
 
-from openclean_pattern.align.factory import AlignerFactory, CollectorFactory
-from openclean_pattern.align.group import COLLECT_GROUP
+from openclean_pattern.align.factory import AlignerFactory
+from openclean_pattern.collect.factory import CollectorFactory
+from openclean_pattern.collect.group import COLLECT_GROUP
 from openclean_pattern.align.pad import ALIGN_PAD
-from openclean_pattern.align.base import Aligner, Collector
+from openclean_pattern.align.base import Aligner
+from openclean_pattern.collect.base import Collector
 
 from openclean_pattern.regex.compiler import RegexCompiler, COMPILER_DEFAULT
 from openclean_pattern.regex.factory import CompilerFactory

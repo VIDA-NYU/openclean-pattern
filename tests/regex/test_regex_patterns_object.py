@@ -1,6 +1,6 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
@@ -8,11 +8,11 @@
 """unit tests for patterns class"""
 
 
-from openclean_pattern.align.group import Group
 from openclean_pattern.datatypes.base import SupportedDataTypes as DT
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.regex.base import SingularRowPattern, PatternElement, PatternElementSizeMonitor
 from openclean_pattern.tokenize.regex import DefaultTokenizer
+from openclean_pattern.collect.group import Group
 
 ROWS = ['32A West Broadway 10007', '54E East Village 10003']
 

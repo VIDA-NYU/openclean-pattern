@@ -1,13 +1,13 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
 """implements a naive padding aligner"""
 
-from openclean_pattern.datatypes.resolver import TypeResolver
+from openclean_pattern.datatypes.base import create_gap_token
 from openclean_pattern.align.base import Aligner
 
 
@@ -35,7 +35,7 @@ class Padder(Aligner):
             The dict of groups with group id as key and row indices as values
         Returns
         -------
-            list[Tuple(Tokens)]
+            dict[int, Tuple(Tokens)]
         """
         aligned = [None] * len(column)
         for cluster, idx in groups.items():
@@ -52,7 +52,7 @@ class Padder(Aligner):
 
             for c, id in zip(col, idx):
                 while len(c) < size:
-                    c = (*c, TypeResolver.gap(rowidx=id))
+                    c = (*c, create_gap_token(rowidx=id))
 
                 if aligned[id] is not None:
                     raise KeyError("found duplicate aligned tokens({new} and {old}) for same row id: {id}".format(id=id, new=c, old=aligned[id]))

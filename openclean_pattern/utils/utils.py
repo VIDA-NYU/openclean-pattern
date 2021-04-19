@@ -1,6 +1,6 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
@@ -215,6 +215,7 @@ class RandomSampler(Sampler):
     Note: if a Counter or dict of type {value:frequency} is passed in, there is no rowidx information tied to
     the sampled series and this can possibly require an extra lookup during anomaly detection
     """
+
     def __init__(self, iterable, n=1, random_state=None):
         """initizlizes the Random Sampler class
 
@@ -244,6 +245,7 @@ class RandomSampler(Sampler):
 
 class Distinct(Sampler):
     """Class to select only the distinct values from the input iterable"""
+
     def __init__(self, iterable):
         """initizlizes the Distinct class
 
@@ -262,3 +264,18 @@ class Distinct(Sampler):
             distinct list of rows
         """
         return list(set(self.iterable))
+
+
+# -- Helper methods -----------------------------------------------------------------
+
+def list_contains_list(o, tree_types=list):
+    """checks is list contains more lists"""
+    if isinstance(o, tree_types):
+        for v in o:
+            if isinstance(v, tree_types):
+                return True
+    elif not isinstance(o, tree_types):
+        #  ignore values that arent lists themselves
+        return True
+
+    return False

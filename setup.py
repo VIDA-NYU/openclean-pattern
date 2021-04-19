@@ -1,6 +1,6 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
@@ -13,15 +13,15 @@ import re
 
 from setuptools import setup, find_packages
 
-# todo: add
 install_requires = [
-    'pandas>=1.0.0',
-    'datamart_geo==0.2',
+    'pandas',
+    'numpy',
+    'datamart_geo>=0.2.1',
     'pygtrie==2.3.3',
+    'scikit-bio',
     'openclean-core>=0.3.0'
 ]
 
-# todo: add
 tests_require = [
     'coverage>=5.0',
     'pytest',

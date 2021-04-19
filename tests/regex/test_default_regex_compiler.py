@@ -1,13 +1,13 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
 """unit tests for DefaultRegexCompiler class"""
 
-from openclean_pattern.align.group import Group
+from openclean_pattern.collect.group import Group
 from openclean_pattern.datatypes.base import SupportedDataTypes as DT
 from openclean_pattern.regex.compiler import DefaultRegexCompiler
 from openclean_pattern.tokenize.regex import DefaultTokenizer
@@ -84,5 +84,6 @@ def test_default_regex_anomaly(business):
 
     mismatches = compiler.mismatches(tokenized, patterns=match_patterns)
     mismatched_rows = business.loc[mismatches, 'Address ']
+
     assert len(mismatched_rows) == 7  # except row#14, the other mismatches are e.g. those that had 14th (alphanum) instead of an alpha at position 2  # noqa: E501
     assert 14 in mismatched_rows.index  # index # 14 = 'ATTN HEATHER J HANSEN' which shouldnt match the pattern.

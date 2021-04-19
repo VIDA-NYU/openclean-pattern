@@ -1,6 +1,6 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
@@ -73,27 +73,12 @@ WEEKDAYS = [
 class TypeResolver(TokenTransformer, metaclass=ABCMeta):
     """This class resolves different data types"""
 
-    @staticmethod
-    def gap(rowidx):
-        """returns a gap Token
-
-        Parameters
-        ----------
-        rowidx: int
-            row id
-
-        Returns
-        -------
-        Token
-        """
-        return Token(token_type=SupportedDataTypes.GAP, value='', rowidx=rowidx)
-
     @abstractmethod
     def resolve(self, tokens: List[Token]) -> List[Token]:
         """returns the basic / non-basic data type augmented row. this can be a
         combination of str and openclean.function.token.base.Token's.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -142,7 +127,7 @@ class DefaultTypeResolver(TypeResolver):
         """passes through all the middlewares and adding found non-basic types and finally through the
         BasicTypeResolver.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -325,16 +310,17 @@ class GeoSpatialResolver(AdvancedTypeResolver):
 
         self.admins = list()
         for level in levels:
-            self.admins.append(geodata[geodata['level'] == level]['name'].str.lower().to_list())
+            data = geodata[geodata['level'] == level]['name'].str.lower().to_list()
+            self.admins.append((data, self.get_label(level)))
 
-        # Convert dataframe into prefix tree
-        self.areas = list()
-        for admin in self.admins:
-            self.areas += admin
+        # Convert dataframe into vocabulary
+        # self.areas = list()
+        # for admin in self.admins:
+        #     self.areas += admin
 
         # todo: pickle full tree?
 
-        super(GeoSpatialResolver, self).__init__(self.areas)
+        super(GeoSpatialResolver, self).__init__(self.admins)
 
     def get_label(self, value):
         labels = [SupportedDataTypes.ADMIN_LEVEL_0,
@@ -344,11 +330,8 @@ class GeoSpatialResolver(AdvancedTypeResolver):
                   SupportedDataTypes.ADMIN_LEVEL_4,
                   SupportedDataTypes.ADMIN_LEVEL_5]
 
-        for i, admin in enumerate(self.admins):
-            if value in admin:
-                return labels[i]
 
-        raise KeyError("{} missing in vocabulary but present in PrefixTree!".format(value))
+        return labels[value]
 
 
 class BusinessEntityResolver(AdvancedTypeResolver):

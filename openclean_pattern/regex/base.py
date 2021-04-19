@@ -1,6 +1,6 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
@@ -190,7 +190,7 @@ class SingularRowPattern(OpencleanPattern):
             value = [value]
 
         if isinstance(value, list) or isinstance(value, tuple):
-            if len(value) == 1 and isinstance(value[0], str):
+            if len(value) == 1 and isinstance(value[0], str) and not isinstance(value[0], Token):
                 value = tokenizer.encode(value)[0]
             else:
                 for v in value:

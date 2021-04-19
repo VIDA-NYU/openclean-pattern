@@ -1,19 +1,22 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
 """Collector class which clusters similar tokens and returns the clusters"""
 
-from openclean_pattern.align.base import Collector
+from openclean_pattern.collect.base import Collector
 from openclean_pattern.align.distance.factory import DistanceFactory
 from openclean_pattern.align.distance.tree_edit import DISTANCE_TED
+from openclean.function.token.base import Token
 
 from collections import defaultdict
 from sklearn.cluster import DBSCAN
 import numpy as np
+
+from typing import List, Dict
 
 COLLECT_CLUSTER = "cluster"
 
@@ -28,12 +31,12 @@ class Cluster(Collector):
         self.eps = kwargs.get("eps", .1)
         self.min_samples = kwargs.get("min_samples", 5)
 
-    def _precompute_distance(self, column):
+    def _precompute_distance(self, column: List[List[Token]]) -> np.array:
         """Accepts a n length column of tokens and generates a nxn matrix of all pairwise distances
 
          Parameters
          ----------
-            column: list[tuple(Token)]
+            column: list[list(Token)]
 
         Returns
         -------

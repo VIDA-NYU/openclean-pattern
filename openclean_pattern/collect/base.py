@@ -1,26 +1,28 @@
 # This file is part of the Pattern and Anomaly Detection Library (openclean_pattern).
 #
-# Copyright (C) 2020 New York University.
+# Copyright (C) 2021 New York University.
 #
 # openclean_pattern is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Collector class which naively groups by similar tokens and returns the groups"""
 
-from openclean_pattern.align.base import Collector
-
-from collections import defaultdict
-
-COLLECT_GROUP = "group"
+from abc import ABCMeta, abstractmethod
 
 
-class Group(Collector):
-    """This collector creates groups based on the no. of tokens in each group"""
-    def __init__(self):
-        """intializes the collector object
+class Collector(metaclass=ABCMeta):
+    """Collects the token objects and returns groups of similar token groups"""
+
+    def __init__(self, collector_type: str):
+        """intializes the Collector object
+
+        Parameters
+        ----------
+        collector_type: str
+            the collector type to use to collect the column tokens
         """
-        super(Group, self).__init__(COLLECT_GROUP)
+        self.collector_type = collector_type
 
+    @abstractmethod
     def collect(self, column):
         """The collect method takes in a list of openclean.function.token.base.Token's
         and aligns them to minimize the distance between that row and the others.
@@ -38,11 +40,5 @@ class Group(Collector):
         list representing row_indices of groups with n tokens / row_index of
         part of the cluster.
         """
-        groups = defaultdict()
-        for i, row in enumerate(column):
-            n = len(row)
-            if n not in groups:
-                groups[n] = list()
-            groups[n].append(i)
+        raise NotImplementedError()  # pragma: no cover
 
-        return groups
